@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Sloppify turns anything into an unbearable LinkedIn thought-leadership post. A parody.">
+<meta property="og:title" content="Sloppify — make your writing worse, professionally">
+<meta property="og:description" content="Turn anything into unbearable LinkedIn slop. A parody tool.">
+<title>Sloppify — make your writing worse, professionally</title>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<style>
+  :root {
+    --paper:#f4f1ea; --surface:#fffdf8; --raise:#fbf9f3;
+    --ink:#18171d; --muted:#67645c; --faint:#96928a; --line:#e5e0d5;
+    --accent:#cf3418; --accent-soft:#f7ddd4;
+    --gold:#e0a92a; --gold-ink:#241a00;
+    --slop-bg:#fbf1d6; --slop-line:#ecd79a; --slop-ink:#8a6400;
+    --good:#2c8a56;
+    --radius:11px; --maxw:1120px;
+    --mono:ui-monospace,"SF Mono","SFMono-Regular",Menlo,Consolas,monospace;
+    --sans:"Helvetica Neue",Helvetica,"Segoe UI",Arial,system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#121116; --surface:#1b1a22; --raise:#211f29;
+      --ink:#f1eee7; --muted:#a6a299; --faint:#78756d; --line:#2c2a35;
+      --accent:#ff5a3c; --accent-soft:#3a1c14;
+      --gold:#f2c14e; --gold-ink:#241a00;
+      --slop-bg:#241f12; --slop-line:#4a3f1e; --slop-ink:#e6c46a;
+      --good:#54c483;
+    }
+  }
+  :root[data-theme="light"]{
+    --paper:#f4f1ea;--surface:#fffdf8;--raise:#fbf9f3;--ink:#18171d;--muted:#67645c;--faint:#96928a;--line:#e5e0d5;
+    --accent:#cf3418;--accent-soft:#f7ddd4;--gold:#e0a92a;--gold-ink:#241a00;--slop-bg:#fbf1d6;--slop-line:#ecd79a;--slop-ink:#8a6400;--good:#2c8a56;
+  }
+  :root[data-theme="dark"]{
+    --paper:#121116;--surface:#1b1a22;--raise:#211f29;--ink:#f1eee7;--muted:#a6a299;--faint:#78756d;--line:#2c2a35;
+    --accent:#ff5a3c;--accent-soft:#3a1c14;--gold:#f2c14e;--gold-ink:#241a00;--slop-bg:#241f12;--slop-line:#4a3f1e;--slop-ink:#e6c46a;--good:#54c483;
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px;}
+  a{color:inherit;}
+
+  header{border-bottom:1px solid var(--line);position:sticky;top:0;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);z-index:5;}
+  .bar{display:flex;align-items:center;justify-content:space-between;padding:15px 0;gap:16px;}
+  .brand{display:flex;align-items:baseline;gap:11px;min-width:0;}
+  .logo{font-weight:800;font-size:23px;letter-spacing:-0.035em;}
+  .logo .d{color:var(--accent);}
+  .tag{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  @media(max-width:620px){.tag{display:none;}}
+  .toggle{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer;}
+  .toggle:hover{border-color:var(--accent);}
+
+  .hero{padding:40px 0 6px;}
+  .hero h1{font-size:clamp(29px,4.6vw,50px);font-weight:800;letter-spacing:-0.035em;line-height:1.03;margin:0 0 14px;text-wrap:balance;max-width:19ch;}
+  .hero h1 .red{color:var(--accent);}
+  .hero p{margin:0;color:var(--muted);font-size:17px;max-width:58ch;}
+
+  /* segmented option rows */
+  .options{display:flex;flex-wrap:wrap;gap:20px;padding:24px 0 6px;}
+  .optgroup{display:flex;flex-direction:column;gap:7px;}
+  .optgroup .glabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);}
+  .seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px;}
+  .seg button{font:inherit;font-size:13px;font-weight:600;color:var(--muted);background:transparent;border:0;border-radius:6px;padding:7px 13px;cursor:pointer;white-space:nowrap;}
+  .seg button:hover{color:var(--ink);}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:#fff;}
+  .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  .work{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:16px 0 8px;align-items:stretch;}
+  @media(max-width:860px){.work{grid-template-columns:1fr;}}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
+  .panel.slopped{background:var(--slop-bg);border-color:var(--slop-line);}
+  .phead{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--line);}
+  .panel.slopped .phead{border-color:var(--slop-line);}
+  .plabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+  .panel.slopped .plabel{color:var(--slop-ink);}
+  .mini{font-family:var(--mono);font-size:11px;color:var(--faint);background:transparent;border:0;cursor:pointer;font-variant-numeric:tabular-nums;}
+  .mini:hover{color:var(--accent);}
+  textarea{width:100%;flex:1;border:0;background:transparent;color:var(--ink);resize:vertical;font-family:var(--sans);font-size:15.5px;line-height:1.6;padding:16px;min-height:230px;outline:none;}
+  textarea::placeholder{color:var(--faint);}
+  .out{flex:1;min-height:230px;padding:16px;font-size:15.5px;line-height:1.72;white-space:pre-wrap;word-wrap:break-word;}
+  .out.empty{color:var(--faint);display:flex;align-items:center;justify-content:center;text-align:center;font-style:italic;}
+
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:16px 0 4px;}
+  .btn{font:inherit;font-weight:700;font-size:14px;cursor:pointer;border-radius:9px;padding:12px 20px;border:1px solid transparent;transition:transform .06s ease,filter .15s ease;}
+  .btn:active{transform:translateY(1px);}
+  .btn.primary{background:var(--accent);color:#fff;}
+  .btn.gold{background:var(--gold);color:var(--gold-ink);}
+  .btn.primary:hover,.btn.gold:hover{filter:brightness(1.05);}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent);}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .hint{color:var(--faint);font-size:12.5px;font-family:var(--mono);}
+
+  .readout{display:grid;grid-template-columns:270px 1fr;gap:18px;padding:24px 0 6px;align-items:stretch;}
+  @media(max-width:860px){.readout{grid-template-columns:1fr;}}
+  .gauge,.tells{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
+  .glabel2{font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:8px;}
+  .score{font-weight:800;font-size:56px;letter-spacing:-0.03em;line-height:1;margin:2px 0 6px;font-variant-numeric:tabular-nums;color:var(--gold);}
+  .score.low{color:var(--good);}
+  .score .pct{font-size:26px;color:var(--faint);}
+  .verdict{font-size:13.5px;color:var(--muted);min-height:2.6em;}
+  .track{height:9px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:12px;}
+  .fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--accent));transition:width .6s cubic-bezier(.2,.8,.2,1);}
+  .fill.low{background:linear-gradient(90deg,var(--good),var(--good));}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{font-family:var(--mono);font-size:12px;padding:5px 9px;border-radius:6px;background:var(--slop-bg);border:1px solid var(--slop-line);color:var(--ink);display:inline-flex;gap:7px;align-items:center;}
+  .chip b{color:var(--slop-ink);font-variant-numeric:tabular-nums;}
+  .chip.rm{background:transparent;border-color:var(--line);}
+  .chip.rm b{color:var(--good);}
+  .tells .none{color:var(--faint);font-size:13.5px;font-style:italic;}
+  .tag{font-family:"Comic Sans MS","Comic Sans",cursive;}
+  .li-card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 15px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .li-head{display:flex;gap:10px;align-items:center;margin-bottom:11px;}
+  .li-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--gold));display:flex;align-items:center;justify-content:center;font-size:22px;flex:none;}
+  .li-name{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.2;}
+  .li-badge{font-family:"Comic Sans MS","Comic Sans",cursive;font-size:11px;background:var(--gold);color:var(--gold-ink);padding:1px 8px;border-radius:999px;font-weight:700;}
+  .li-sub{font-size:12px;color:var(--faint);margin-top:2px;}
+  .li-body{font-size:15px;line-height:1.7;white-space:pre-wrap;word-wrap:break-word;color:var(--ink);}
+  .li-react{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+  .li-react b{color:var(--ink);font-weight:600;}
+  .li-stamp{position:absolute;top:12px;right:10px;transform:rotate(11deg);font-family:"Comic Sans MS","Comic Sans",cursive;font-weight:700;color:var(--accent);border:3px solid var(--accent);border-radius:8px;padding:2px 9px;font-size:13px;opacity:.82;text-transform:uppercase;pointer-events:none;}
+  .score.wow{animation:pop .5s ease;}
+  @keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.18);}100%{transform:scale(1);}}
+  .mascot-wrap{margin-left:auto;}
+  .mascot{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 18px;}
+  .mascot-cap{font-family:"Comic Sans MS","Comic Sans",cursive;font-size:12px;color:var(--muted);white-space:nowrap;}
+  .dude{width:84px;height:84px;display:block;image-rendering:pixelated;animation:bob 2.4s ease-in-out infinite;transform-origin:50% 92%;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-2px);}}
+  .mascot.pop .dude{animation:popjump .5s ease;}
+  @keyframes popjump{0%{transform:translateY(0) rotate(0);}30%{transform:translateY(-7px) rotate(-8deg);}60%{transform:translateY(0) rotate(6deg);}100%{transform:translateY(0) rotate(0);}}
+  .dude .skin{fill:#e8b892;}
+  .dude .hair-normal rect,.dude .hair-spiky rect{fill:#3a2a1a;}
+  .dude .eyes-normal rect{fill:#17151a;}
+  .dude .acc-shades rect{fill:#111;}
+  .dude .mouth{fill:#7a3b3b;}
+  .dude .collar{fill:#f4f2ec;}
+  .dude .tie{fill:#c0392b;}
+  .dude .gold{fill:#f2c14e;}
+  .dude .mug{fill:#f4f2ec;} .dude .steam{fill:#c9c9c9;opacity:.7;}
+  .dude .pom{fill:#fff;} .dude .acc-party polygon{fill:var(--accent);}
+  .dude .shirt{fill:#38455e;}
+  .dude .hair-spiky,.dude .acc-shades,.dude .acc-party,.dude .acc-coffee,.dude .acc-chain,.dude .acc-tie,.dude .mouth-smile,.dude .mouth-wild{display:none;}
+  .mascot[data-tone="1"] .shirt{fill:#38455e;}
+  .mascot[data-tone="1"] .acc-tie{display:block;}
+  .mascot[data-tone="2"] .shirt{fill:#2f8f77;}
+  .mascot[data-tone="2"] .acc-coffee{display:block;}
+  .mascot[data-tone="2"] .mouth-neutral{display:none;} .mascot[data-tone="2"] .mouth-smile{display:block;}
+  .mascot[data-tone="3"] .shirt{fill:#e0a92a;}
+  .mascot[data-tone="3"] .hair-normal{display:none;} .mascot[data-tone="3"] .hair-spiky{display:block;}
+  .mascot[data-tone="3"] .eyes-normal{display:none;} .mascot[data-tone="3"] .acc-shades{display:block;}
+  .mascot[data-tone="3"] .mouth-neutral{display:none;} .mascot[data-tone="3"] .mouth-wild{display:block;}
+  .mascot[data-tone="3"] .acc-party{display:block;} .mascot[data-tone="3"] .acc-chain{display:block;}
+  .mascot{cursor:pointer;} .mascot:hover{border-color:var(--accent);}
+  .floaters{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:3;}
+  .floaters span{position:absolute;bottom:-50px;animation:floatup linear infinite;filter:drop-shadow(0 2px 2px rgba(0,0,0,.15));}
+  @keyframes floatup{0%{transform:translateY(0) rotate(0);opacity:0;}10%{opacity:.92;}90%{opacity:.92;}100%{transform:translateY(-112vh) rotate(360deg);opacity:0;}}
+  .slop-toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);background:var(--gold);color:#241a00;font-family:"Comic Sans MS","Comic Sans",cursive;font-weight:700;font-size:15px;padding:10px 22px;border-radius:999px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.25);transition:opacity .4s;}
+  body.slopmode{background:linear-gradient(-45deg,#0a66c2,#e0a92a,#d1341b,#8e44ad);background-size:400% 400%;animation:slopgrad 9s ease infinite;}
+  @keyframes slopgrad{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+  body.slopmode *{font-family:"Comic Sans MS","Comic Sans",cursive !important;}
+  body.slopmode header{background:rgba(255,253,248,.9);}
+  body.slopmode .hero h1,body.slopmode .hero p,body.slopmode .section-h,body.slopmode .section-sub{color:#fff;text-shadow:1px 1px 0 #000,3px 3px 0 rgba(0,0,0,.35);}
+  body.slopmode .hero h1 .red{color:#ffd84d;}
+  body.slopmode .panel,body.slopmode .gauge,body.slopmode .tells,body.slopmode .mascot,body.slopmode .ex,body.slopmode .seg,body.slopmode .flex-note{box-shadow:5px 5px 0 rgba(0,0,0,.18);transform:rotate(-.6deg);}
+  body.slopmode .logo{display:inline-block;animation:wiggle .5s ease-in-out infinite;}
+  @keyframes wiggle{0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg);}}
+  @media(prefers-reduced-motion:reduce){body.slopmode{animation:none;}body.slopmode .logo{animation:none;}.floaters span{animation:none;display:none;}}
+
+  .section-h{font-weight:800;font-size:23px;letter-spacing:-0.02em;margin:44px 0 4px;}
+  .section-sub{color:var(--muted);font-size:14.5px;margin:0 0 18px;}
+  .examples{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:860px){.examples{grid-template-columns:1fr;}}
+  .ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
+  .ex .ex-in{padding:14px 15px;font-size:14px;color:var(--muted);border-bottom:1px dashed var(--line);}
+  .ex .ex-in .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:5px;}
+  .ex .ex-out{padding:14px 15px;font-size:13.6px;line-height:1.62;white-space:pre-wrap;background:var(--slop-bg);color:var(--ink);flex:1;}
+  .ex .ex-out .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--slop-ink);display:block;margin-bottom:6px;}
+  .ex .ex-try{font:inherit;font-size:12.5px;font-weight:600;color:var(--accent);background:transparent;border:0;border-top:1px solid var(--line);padding:11px;cursor:pointer;text-align:left;}
+  .ex .ex-try:hover{background:var(--accent-soft);}
+
+  .flex-note{margin:40px 0 8px;border:1px dashed var(--line);border-radius:var(--radius);padding:15px 17px;color:var(--muted);font-size:13.5px;display:flex;gap:13px;align-items:flex-start;}
+  .flex-note .k{font-family:var(--mono);color:var(--accent);font-size:11px;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;padding-top:2px;}
+
+  footer{border-top:1px solid var(--line);margin-top:36px;}
+  .foot{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;justify-content:space-between;padding:22px 0 34px;color:var(--muted);font-size:13.5px;}
+  .foot a.cta{text-decoration:none;border-bottom:2px solid var(--accent);padding-bottom:1px;font-weight:600;}
+  .foot a.cta:hover{color:var(--accent);}
+  .foot .made{font-family:var(--mono);font-size:12px;color:var(--faint);}
+
+  @media(prefers-reduced-motion:reduce){.fill{transition:none;}.btn{transition:none;}.score.wow{animation:none;}.dude{animation:none;}.mascot.pop .dude{animation:none;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="brand">
+      <span class="logo">Sloppify<span class="d">.</span></span>
+      <span class="tag">make your writing worse, professionally</span>
+    </div>
+    <button class="toggle" id="themeBtn" aria-label="Theme" title="Theme" style="min-width:42px;text-align:center;font-size:15px">☀️</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>Turn anything into <span class="red">LinkedIn slop</span>.</h1>
+    <p>Paste something a real human wrote. Watch it get promoted into an unbearable LinkedIn thought-leadership post, one humblebrag at a time. Yes, it's a parody. No, we will not be stopping.</p>
+  </section>
+
+  <div class="options">
+    <div class="optgroup" id="toneWrap">
+      <span class="glabel">Tone</span>
+      <div class="seg" id="toneSeg" role="group" aria-label="Tone">
+        <button data-tone="1" aria-pressed="false">Professional</button>
+        <button data-tone="2" aria-pressed="true">Casual</button>
+        <button data-tone="3" aria-pressed="false">Unhinged</button>
+      </div>
+    </div>
+    <div class="optgroup mascot-wrap">
+      <span class="glabel">Today's thought leader</span>
+      <div class="mascot" id="mascot" data-tone="2">
+        <svg class="dude" viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">
+          <g class="acc-party"><polygon points="12,0 8,6 16,6"/><rect class="pom" x="11" y="0" width="2" height="2"/></g>
+          <g class="hair-normal"><rect x="6" y="3" width="12" height="4"/><rect x="5" y="5" width="2" height="3"/><rect x="17" y="5" width="2" height="3"/></g>
+          <g class="hair-spiky"><rect x="6" y="4" width="12" height="3"/><rect x="6" y="1" width="2" height="3"/><rect x="10" y="0" width="2" height="4"/><rect x="14" y="1" width="2" height="3"/></g>
+          <rect class="skin" x="6" y="6" width="12" height="8"/>
+          <g class="eyes-normal"><rect x="8" y="9" width="2" height="2"/><rect x="14" y="9" width="2" height="2"/></g>
+          <g class="acc-shades"><rect x="7" y="9" width="4" height="2"/><rect x="13" y="9" width="4" height="2"/><rect x="11" y="10" width="2" height="1"/></g>
+          <rect class="mouth mouth-neutral" x="10" y="12" width="4" height="1"/>
+          <g class="mouth mouth-smile"><rect x="9" y="12" width="1" height="1"/><rect x="10" y="13" width="4" height="1"/><rect x="14" y="12" width="1" height="1"/></g>
+          <rect class="mouth mouth-wild" x="10" y="11" width="4" height="3"/>
+          <rect class="skin" x="10" y="14" width="4" height="1"/>
+          <rect class="shirt" x="4" y="15" width="16" height="9"/>
+          <rect class="shirt" x="2" y="16" width="2" height="8"/>
+          <rect class="shirt" x="20" y="16" width="2" height="8"/>
+          <polygon class="collar" points="10,15 12,18 14,15"/>
+          <g class="acc-tie"><rect class="tie" x="11" y="15" width="2" height="2"/><polygon class="tie" points="11,17 13,17 12,21"/></g>
+          <g class="acc-chain"><rect class="gold" x="9" y="15" width="6" height="1"/><rect class="gold" x="11" y="16" width="2" height="2"/></g>
+          <g class="acc-coffee"><rect class="steam" x="19" y="17" width="1" height="2"/><rect class="mug" x="18" y="19" width="4" height="4"/><rect class="mug" x="22" y="20" width="1" height="2"/></g>
+        </svg>
+        <span class="mascot-cap" id="mascotCap">Cozy &amp; caffeinated</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="work">
+    <div class="panel">
+      <div class="phead"><span class="plabel" id="inLabel">Your writing</span><span class="mini" id="inCount">0 chars</span></div>
+      <textarea id="input" placeholder="Paste something you actually wrote. A sentence is enough.">We shipped instant payouts today. No extra fees. Just open the app and the money is there.</textarea>
+    </div>
+    <div class="panel slopped" id="outPanel">
+      <div class="phead"><span class="plabel" id="outLabel">Certified slop</span><span style="display:flex;gap:14px"><button class="mini" id="saveBtn">save image</button><button class="mini" id="copyBtn">copy</button></span></div>
+      <div class="out empty" id="output">Your slop will appear here.</div>
+    </div>
+  </section>
+
+  <div class="controls">
+    <button class="btn primary" id="run">Sloppify it</button>
+    <button class="btn gold" id="runHard" title="crank the tone to Unhinged">Sloppify harder 🔥</button>
+    <button class="btn ghost" id="aiBtn" title="smarter slop, generated by a real AI">✨ AI slop</button>
+    <button class="btn ghost" id="surprise">🎲 Surprise me</button>
+    <button class="btn ghost" id="reset">Reset</button>
+    <span class="hint" id="hint">each click = a fresh take · ✨ AI slop is rate-limited</span>
+  </div>
+  <div id="tsw" class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-size="flexible" style="margin-top:12px"></div>
+
+  <section class="readout">
+    <div class="gauge">
+      <span class="glabel2" id="scoreLabel">Slop Score</span>
+      <div class="score"><span id="score">0</span><span class="pct">%</span></div>
+      <div class="verdict" id="verdict">Awaiting input.</div>
+      <div class="track"><div class="fill" id="fill"></div></div>
+    </div>
+    <div class="tells">
+      <span class="glabel2" id="tellsLabel">Tells injected</span>
+      <div class="chips" id="chips"><span class="none">Nothing yet. Your writing is dangerously human.</span></div>
+    </div>
+  </section>
+
+  <h2 class="section-h">Certified before &amp; after</h2>
+  <p class="section-sub">Real sentences, professionally ruined. Tap one to load it above.</p>
+  <div class="examples" id="examples"></div>
+
+  <div class="flex-note">
+    <span class="k">the bit</span>
+    <span>Yes, this is a joke. No, the hosted version isn't held together with tape: server-side key, per-IP + daily rate caps, a task-locked prompt, request logging, and a golden-eval check that fails the build if the output stops being slop. It's a toy. It still ships like a product.</span>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span><a class="cta" href="#" id="takeLink">Why I built this, and what I actually think about AI slop &rarr;</a></span>
+    <span class="made">built in an afternoon while the internet argued about em-dashes</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id);};
+  var root=document.documentElement;
+
+  var mode=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+  function applyMode(){
+    if(mode!=="slop")root.setAttribute("data-theme",mode);
+    document.body.classList.toggle("slopmode",mode==="slop");
+    $("themeBtn").textContent=mode==="light"?"☀️":mode==="dark"?"🌙":"🤪";
+    $("themeBtn").setAttribute("aria-label",mode==="slop"?"Slop mode (click to exit)":"Theme");
+  }
+  function setMode(m){
+    var wasSlop=(mode==="slop");mode=m;
+    if(m==="slop"&&!wasSlop){[].forEach.call($("toneSeg").querySelectorAll("button"),function(x){x.setAttribute("aria-pressed",x.getAttribute("data-tone")==="3"?"true":"false");});state.tone=3;setMascot("3");spawnFloaters();slopToast("🎉 SLOP MODE ACTIVATED 🎉");}
+    if(m!=="slop"&&wasSlop){var f=$("floaters");if(f)f.remove();slopToast("sanity restored. for now.");}
+    applyMode();
+  }
+  $("themeBtn").addEventListener("click",function(){setMode(mode==="light"?"dark":mode==="dark"?"slop":"light");});
+  applyMode();
+
+  // ---------- data ----------
+  var BANNED=[
+    ["use","utilize"],["uses","utilizes"],["using","leveraging"],["used","leveraged"],
+    ["help","empower"],["helps","empowers"],["helped","empowered"],
+    ["make","craft"],["makes","crafts"],["made","crafted"],["making","crafting"],
+    ["build","architect"],["built","architected"],["building","architecting"],
+    ["good","game-changing"],["great","transformative"],["big","robust"],["small","lean"],
+    ["change","transform"],["changed","transformed"],["improve","optimize"],["improved","optimized"],["better","more robust"],
+    ["idea","insight"],["ideas","insights"],["think","ideate"],["thought","strategic insight"],
+    ["start","spearhead"],["started","spearheaded"],["team","cross-functional stakeholders"],
+    ["problem","pain point"],["problems","pain points"],["customer","end user"],["customers","end users"],
+    ["plan","strategic roadmap"],["goal","north star"],["meeting","alignment sync"],["learn","upskill"],
+    ["show","showcase"],["money","capital"],["fast","velocity-driven"],["work","execution"],
+    ["new","next-generation"],["easy","frictionless"],["hard","non-trivial"],["talk","align"],["users","end users"],
+    ["volunteer","spearhead"],["volunteered","spearheaded"],["volunteering","spearheading"],
+    ["festival","large-scale cultural activation"],["booth","experiential brand touchpoint"],["event","high-impact convening"],
+    ["class","immersive learning environment"],["club","member-driven ecosystem"],["studied","conducted deep research into"],
+    ["internship","formative leadership crucible"],["organized","orchestrated"],["organize","orchestrate"],
+    ["joined","onboarded into"],["won","secured a competitive outcome in"],["practiced","iterated on"],
+    ["coffee","a hand-crafted beverage experience"],["friends","my personal board of advisors"],["party","a curated networking experience"],
+    ["game","a high-stakes competitive engagement"],["cleaned","optimized the operational footprint of"],["cooked","engineered a culinary solution"],["sold","drove revenue through"]
+  ];
+  var REVERSE={}; BANNED.forEach(function(p){ if(!REVERSE[p[1].toLowerCase()]) REVERSE[p[1].toLowerCase()]=p[0]; });
+
+  var OPENERS={1:["Let me be clear.","A quick reflection.","Worth stating plainly."],2:["Here's the thing.","Unpopular opinion:","Nobody tells you this."],3:["I wasn't going to post this, but here goes.","Grab a coffee. This one's a ride.","A mentor once told me something I'll never forget."]};
+  var INSIGHTS=["Most people miss this.","Read that again.","Let that sink in.","This changed everything.","And that's the part nobody talks about."];
+  var STATS=["Studies show 87% of top performers agree.","9 out of 10 leaders won't admit this.","The data doesn't lie: engagement is up 3x.","Fun fact: that's a 40% efficiency unlock."];
+  var KICKERS=["Because at the end of the day, people don't buy products. They buy belief.","The future belongs to the ones who show up.","Stay hungry. Stay humble. Stay building.","Small steps. Big vision. Zero excuses.","Comfort is the enemy of the next level.","Your network is your net worth."];
+  var STORY=["Three years ago I was broke, doubted, and running on instinct.","I almost quit that week.","Everyone said it couldn't be done."];
+  var HASHES=["#Leadership","#Growth","#Mindset","#Innovation","#AI","#ThoughtLeadership","#GameChanger","#Hustle","#Grateful"];
+  var CTAS=["Agree? ♻️ Repost to share the wisdom.","Save this post. 🔖 Thank me later.","Follow for more takes like this. 🚀","Who needs to hear this today? 👇","Drop a 💯 if this resonates."];
+  var EMO={1:["📈","🔑"],2:["🚀","✨","💡"],3:["🚀","🔥","📈","✨","💡","🙌","💯"]};
+  var ANNOUNCE={1:["I'm pleased to share a brief reflection.","Reflecting on a recent milestone."],2:["Thrilled to share this. 🙌","Humbled and honored to announce something.","Excited to share a quick win. 🚀"],3:["Beyond thrilled to FINALLY share this. 🚀","Humbled. Honored. Grateful. And a little emotional.","I've been sitting on this one for weeks. Here goes. 🙏"]};
+  var OVEREXPLAIN=["Let me break that down.","In plain English? The same thing — but with more conviction.","What does that actually mean? Everything. It means everything.","To put it simply: we did the thing, and the thing was transformative."];
+  var GRATITUDE={2:["Grateful for the journey. 🙏","Onwards and upwards. 🙌"],3:["Grateful. Humbled. Still processing. 🙏","This is what the grind is all about. 🫡"]};
+  var NEGPARALLEL=["This isn't just {t}. It's a movement.","This isn't just {t}. It's a mindset.","This isn't just {t}. It's a lifestyle.","This isn't just {t}. It's everything.","We didn't just do {t}. We redefined it."];
+  var RHETORICAL=["Can we talk about {t} for a second?","Ever feel like {t} is criminally underrated?","What if I told you {t} could change everything?"];
+  var HOTTAKE=["Unpopular opinion:","Hot take:","Controversial, but here goes:"];
+  var ONEWORD=["Growth.","Relentless.","Vision.","Grit.","Momentum.","Alone.","Unstoppable."];
+  var LESSONS=["Vision beats comfort.","Execution beats ideas.","Consistency is the real hack.","Your network is your net worth.","Discomfort is just growth in a trench coat."];
+
+  var STRIP_STARTS=[].concat(OPENERS[1],OPENERS[2],OPENERS[3],ANNOUNCE[1],ANNOUNCE[2],ANNOUNCE[3],OVEREXPLAIN,GRATITUDE[2],GRATITUDE[3],INSIGHTS,STATS,KICKERS,STORY,CTAS,HOTTAKE,["This isn't just","We didn't just do","Can we talk about","Ever feel like","What if I told you","What did this teach","Save this. Follow","Here's what I learned","Here's what nobody","I'm deeply passionate","(And yes"]);
+
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function sentences(t){return t.replace(/\s+/g," ").trim().match(/[^.!?]+[.!?]*/g)||[];}
+  function cap(s){s=s.trim();return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+  function lower(s){return s?s.charAt(0).toLowerCase()+s.slice(1):s;}
+  function stripEnd(s){return s.replace(/[.!?]+$/,"");}
+  function stripEmoji(s){return s.replace(/[\u{1F300}-\u{1FAFF}☀-➿]/gu,"").replace(/\s{2,}/g," ").trim();}
+  function pick(a){return a[Math.floor(Math.random()*a.length)];}
+  function chance(p){return Math.random()<p;}
+  function shuffleTake(a,n){var c=a.slice();for(var i=c.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=c[i];c[i]=c[j];c[j]=t;}return c.slice(0,n);}
+  function fill(s,topic){return s.replace(/\{t\}/g,topic).replace(/\{T\}/g,cap(topic));}
+  function shout(s){var m=s.match(/\b[a-z]{4,10}\b/gi);if(!m||!m.length)return s;var w=m[Math.floor(Math.random()*m.length)];return s.replace(new RegExp("\\b"+w+"\\b"),w.toUpperCase());}
+  function matchCase(src,rep){return /^[A-Z]/.test(src)?cap(rep):rep;}
+  function keyword(t){
+    var stop={the:1,a:1,an:1,we:1,to:1,and:1,of:1,in:1,on:1,at:1,for:1,is:1,it:1,our:1,your:1,just:1,so:1,my:1,this:1,that:1,with:1,you:1,today:1,are:1,was:1,were:1,about:1,really:1};
+    var w=(t.toLowerCase().match(/[a-z][a-z\-]{3,}/g)||[]).filter(function(x){return !stop[x];});
+    var nouny=w.filter(function(x){return !/(ed|ing|ly)$/.test(x);});
+    return nouny[0]||w[0]||"this";
+  }
+
+  // ---------- slopify ----------
+  function slopify(text,tone,chaos){
+    var tells={};
+    function log(k,n){tells[k]=(tells[k]||0)+(n||1);}
+    var sents=sentences(text); if(!sents.length) return {text:"",tells:tells};
+
+    var swaps=0, firstSwap=null;
+    var body=sents.map(function(s){
+      BANNED.forEach(function(p){
+        var re=new RegExp("\\b"+p[0]+"\\b","gi");
+        s=s.replace(re,function(m){swaps++;if(!firstSwap)firstSwap=[m,p[1]];return matchCase(m,p[1]);});
+      });
+      return s.trim();
+    });
+    if(swaps)log("buzzword",swaps);
+
+    var dashes=0;
+    for(var i=0;i<body.length-1;i++){
+      if(body[i].length<90&&(tone>=2||chance(.5))){
+        body[i]=stripEnd(body[i])+" — "+lower(stripEnd(body[i+1]))+".";
+        body.splice(i+1,1);dashes++;
+      }
+    }
+    if(dashes)log("em-dash",dashes);
+
+    var topic=keyword(text), lines=[], emoPool=EMO[tone];
+
+    if(chaos){lines.push("🧵 "+pick(ANNOUNCE[3])); log("humblebrag-announcement",1);}
+    else{var r=Math.random();
+      if(r<0.45){lines.push(pick(ANNOUNCE[tone])); log("humblebrag-announcement",1);}
+      else if(r<0.75){lines.push(pick(HOTTAKE)); log("throat-clearing",1);}
+      else{lines.push(fill(pick(RHETORICAL),topic)); log("rhetorical-opener",1);}}
+    if((chaos||tone>=3)&&chance(.7)){lines.push(pick(STORY)); log("fake-origin-story",1);}
+    if(chance(.8)){lines.push(fill(pick(NEGPARALLEL),topic)); log("it's-not-X-it's-Y",1);}
+
+    body.forEach(function(s,idx){
+      var line=cap(s);
+      if(tone>=2||idx===0){line=pick(emoPool)+" "+line;}
+      if(chaos)line=shout(line);
+      lines.push(line);
+      if(idx===0){
+        if(chance(.7)){lines.push(pick(INSIGHTS)); log("faux-insight",1);}
+        if(chance(.7)){lines.push(pick(OVEREXPLAIN)); log("over-explanation",1);}
+      }
+    });
+
+    if(tone>=2&&chance(.6)){lines.push("I'm deeply passionate about "+topic+"."); log("passion-cliche",1);}
+    if(tone>=2&&chance(.5)){lines.push(pick(ONEWORD)); log("one-word-drama",1);}
+    if(tone>=2&&chance(.6)){lines.push(pick(STATS)); log("fake-stat",1);}
+    if(firstSwap&&chance(.7)){lines.push('(And yes — "'+String(firstSwap[1]).toLowerCase()+'" just means "'+String(firstSwap[0]).toLowerCase()+'." But it sounds better.)'); log("define-own-jargon",1);}
+    if(chaos||(tone>=3&&chance(.4))){
+      lines.push("What did this teach me? A few things:");
+      shuffleTake(LESSONS,chaos?4:3).forEach(function(l,ix){lines.push((ix+1)+". "+l);});
+      if(chaos){lines.push("This. 👏 Is. 👏 The. 👏 Way."); log("clap-emphasis",1);}
+      log("listicle",1);
+    }
+    lines.push(pick(KICKERS)); log("profound-kicker",1);
+    if(tone>=2&&chance(.6)){lines.push(pick(GRATITUDE[tone>=3?3:2])); log("performative-gratitude",1);}
+    lines.push(pick(CTAS)); log("engagement-bait",1);
+    if(chaos){lines.push("Save this. Follow for more. Repost if it hit. 🔁"); log("engagement-bait",1);}
+
+    var tagCount=Math.min(HASHES.length,tone+2+(chaos?2:0)+(chance(.5)?1:0));
+    var tags=shuffleTake(HASHES,tagCount).join(" "); log("hashtag-stuffing",tagCount);
+
+    var out=lines.join("\n\n")+"\n\n"+tags;
+    var emc=(out.match(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu)||[]).length; if(emc)log("emoji",emc);
+    return {text:out,tells:tells};
+  }
+
+  // ---------- de-slop (rules cleaner) ----------
+  function deslop(text){
+    var removed={};
+    function log(k,n){removed[k]=(removed[k]||0)+(n||1);}
+    var raw=text.split(/\n+/).map(function(l){return l.trim();}).filter(Boolean);
+    var kept=[];
+    raw.forEach(function(l){
+      if(/^#\w/.test(l)){log("hashtags",1);return;}
+      if(/^[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u.test(l.replace(/^[\d.]+\s*/,""))&&l.length<40){/* keep short emoji lines? drop pure */}
+      var plain=l.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu,"").replace(/👏/g,"").trim();
+      if(!plain){log("emoji-line",1);return;}
+      var hit=STRIP_STARTS.some(function(p){var pp=stripEmoji(p).toLowerCase();return pp&&plain.toLowerCase().indexOf(pp)===0;});
+      if(hit){log("filler-line",1);return;}
+      if(/^\d+\.\s/.test(plain)&&plain.length<60){log("listicle-line",1);return;}
+      if(/^[A-Z][a-z]+\.$/.test(plain)){log("one-word-line",1);return;}
+      kept.push(plain);
+    });
+    var joined=kept.join(" ");
+    var em=(joined.match(/—/g)||[]).length; if(em)log("em-dash",em);
+    joined=joined.replace(/\s*—\s*/g,". ");
+    var bw=0;
+    Object.keys(REVERSE).sort(function(a,b){return b.length-a.length;}).forEach(function(k){
+      var re=new RegExp("\\b"+k.replace(/[-\/\\^$*+?.()|[\]{}]/g,"\\$&")+"\\b","gi");
+      joined=joined.replace(re,function(m){bw++;return matchCase(m,REVERSE[k]);});
+    });
+    if(bw)log("buzzword",bw);
+    var em2=(joined.match(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu)||[]).length;
+    joined=joined.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu,"").replace(/\s{2,}/g," ").trim();
+    if(em2)log("emoji",em2);
+    return {text:joined||"(nothing left. it was all slop.)",tells:removed};
+  }
+
+  // ---------- scoring ----------
+  var SLOP_WORDS=/\b(utilize|leverag\w*|empower\w*|craft\w*|architect\w*|game-changing|transformative|robust|optimize\w*|synerg\w*|spearhead\w*|frictionless|next-generation|north star|thought leadership|pain point|end users?|stakeholders|upskill|velocity|showcase|thrilled|humbled|honored|grateful|passionate|movement|milestone|journey)\b/gi;
+  function scoreText(t){
+    if(!t.trim())return 0;
+    var emc=(t.match(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu)||[]).length;
+    var em=(t.match(/—/g)||[]).length;
+    var bw=(t.match(SLOP_WORDS)||[]).length;
+    var tags=(t.match(/#\w+/g)||[]).length;
+    var lines=t.split(/\n\s*\n/).length;
+    var negp=/isn't just|not just|it's a movement/i.test(t)?12:0;
+    var s=Math.round(emc*3+em*5+bw*4+tags*2+Math.min(lines,8)*2+negp);
+    return Math.max(0,Math.min(99,s));
+  }
+
+  // ---------- render ----------
+  var state={dir:"slop",tone:2};var lastOutput="",lastScore=0;
+  var LABELS={buzzword:"buzzword swap","em-dash":"em-dash","it's-not-X-it's-Y":"“it's not X, it's Y”","throat-clearing":"throat-clearing","humblebrag-announcement":"humblebrag opener","rhetorical-opener":"rhetorical opener","one-word-drama":"one-word drama","one-word-line":"one-word line","faux-insight":"faux-insight","over-explanation":"over-explaining","define-own-jargon":"defines own jargon","passion-cliche":"“I'm passionate about”","fake-stat":"fake stat","performative-gratitude":"performative gratitude","profound-kicker":"profound kicker","engagement-bait":"engagement bait",emoji:"emoji","hashtag-stuffing":"hashtags","fake-origin-story":"fake origin story",listicle:"listicle","clap-emphasis":"👏 clap 👏",hashtags:"hashtags","emoji-line":"emoji line","filler-line":"filler line","listicle-line":"listicle line"};
+
+  var animScore=0,animReq=null;
+  function setScore(target,low){
+    var s=$("score"),f=$("fill"),sc=document.querySelector(".score");
+    sc.classList.toggle("low",!!low); f.classList.toggle("low",!!low);
+    f.style.width=target+"%";
+    if(matchMedia("(prefers-reduced-motion: reduce)").matches){animScore=target;s.textContent=target;return;}
+    cancelAnimationFrame(animReq);var start=animScore,t0=null;
+    animReq=requestAnimationFrame(function loop(ts){if(!t0)t0=ts;var p=Math.min(1,(ts-t0)/600);animScore=Math.round(start+(target-start)*p);s.textContent=animScore;if(p<1)animReq=requestAnimationFrame(loop);});
+  }
+  function slopVerdict(s){if(s>=90)return "Peak slop. Chef's kiss. Do not publish.";if(s>=70)return "Certified thought leader. Reads like a robot in a blazer.";if(s>=45)return "Getting there. A recruiter would squint.";return "Suspiciously readable. Add more emoji.";}
+  function cleanVerdict(s){if(s<=12)return "Human again. Someone actually wrote this.";if(s<=30)return "Mostly de-slopped. A few tells survived.";return "Still pretty sloppy. Try running it again.";}
+
+  function liCard(text,score){
+    var hot=score>=85;
+    var stamp=hot?'<div class="li-stamp">Certified Slop</div>':'';
+    var reacts=hot?'You and 2,847 others':'You and a few others';
+    var reposts=hot?'412 reposts':'3 reposts';
+    return '<div class="li-card">'+stamp+
+      '<div class="li-head"><div class="li-av">🧑‍💼</div><div><div class="li-name">You <span class="li-badge">Top Voice 🏆</span></div><div class="li-sub">Thought Leader · 1st · 🌐</div></div></div>'+
+      '<div class="li-body">'+esc(text)+'</div>'+
+      '<div class="li-react">👏 🔥 💯 <b>'+reacts+'</b> · '+reposts+'</div></div>';
+  }
+  function run(forceTone,chaos){
+    var text=$("input").value;
+    if(!text.trim()){$("input").focus();return;}
+    var o=$("output"),op=$("outPanel");
+    if(state.dir==="clean"){
+      var r=deslop(text);lastOutput=r.text;
+      o.classList.remove("empty");o.innerHTML="";o.textContent=r.text;op.classList.remove("slopped");
+      $("outLabel").textContent="De-slopped";
+      var sc=scoreText(r.text);setScore(sc,true);
+      $("verdict").textContent=cleanVerdict(sc);
+      $("scoreLabel").textContent="Slop Score (after)";$("tellsLabel").textContent="Tells removed";
+      renderChips(r.tells,true);
+    } else {
+      var tone=forceTone||state.tone;
+      var r2=slopify(text,tone,chaos);lastOutput=r2.text;
+      var s2=Math.min(99,scoreText(r2.text)+(tone-1)*5+(chaos?8:0));lastScore=s2;
+      o.classList.remove("empty");op.classList.add("slopped");
+      o.innerHTML=liCard(r2.text,s2);
+      $("outLabel").textContent="Certified slop";
+      setScore(s2,false);
+      var scEl=document.querySelector(".score");scEl.classList.remove("wow");
+      if(s2>=90&&!matchMedia("(prefers-reduced-motion: reduce)").matches){void scEl.offsetWidth;scEl.classList.add("wow");}
+      $("verdict").textContent=slopVerdict(s2);
+      $("scoreLabel").textContent="Slop Score";$("tellsLabel").textContent="Tells injected";
+      renderChips(r2.tells,false);
+      popMascot();
+    }
+  }
+  function renderChips(map,removed){
+    var chips=$("chips"),keys=Object.keys(map);
+    if(!keys.length){chips.innerHTML='<span class="none">Nothing to report.</span>';return;}
+    chips.innerHTML=keys.map(function(k){return '<span class="chip'+(removed?' rm':'')+'">'+(removed?'−':'+')+' '+(LABELS[k]||k)+' <b>'+map[k]+'</b></span>';}).join("");
+  }
+
+  // segmented controls
+  function bindSeg(id,attr,cb){
+    var seg=$(id);
+    seg.addEventListener("click",function(e){
+      var b=e.target.closest("button"); if(!b)return;
+      [].forEach.call(seg.querySelectorAll("button"),function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});
+      cb(b.getAttribute(attr));
+    });
+  }
+  bindSeg("toneSeg","data-tone",function(v){state.tone=parseInt(v,10);setMascot(v);});
+  function setMascot(v){var m=$("mascot");if(!m)return;m.setAttribute("data-tone",v);var caps={"1":"Buttoned up","2":"Cozy & caffeinated","3":"Fully unhinged"};$("mascotCap").textContent=caps[v]||"";popMascot();}
+  function popMascot(){var m=$("mascot");if(!m)return;m.classList.remove("pop");void m.offsetWidth;m.classList.add("pop");setTimeout(function(){m.classList.remove("pop");},520);}
+  function slopToast(msg){var t=document.createElement("div");t.className="slop-toast";t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.style.opacity="0";setTimeout(function(){t.remove();},400);},2400);}
+  function spawnFloaters(){
+    if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+    var em=["🚀","💼","📈","✨","🔥","💯","🙌","🧠","💡","♻️","🏆","🤝"];
+    var wrap=document.createElement("div");wrap.className="floaters";wrap.id="floaters";
+    for(var i=0;i<18;i++){var s=document.createElement("span");s.textContent=em[i%em.length];s.style.left=(Math.random()*100).toFixed(1)+"%";s.style.animationDuration=(4+Math.random()*5).toFixed(2)+"s";s.style.animationDelay=(Math.random()*4).toFixed(2)+"s";s.style.fontSize=(18+(Math.random()*26|0))+"px";wrap.appendChild(s);}
+    document.body.appendChild(wrap);
+  }
+  $("mascot").addEventListener("click",function(){setMode(mode==="slop"?(root.getAttribute("data-theme")==="dark"?"dark":"light"):"slop");});
+
+  $("run").addEventListener("click",function(){run();});
+  $("runHard").addEventListener("click",function(){run(3,true);});
+  $("reset").addEventListener("click",function(){
+    $("input").value="";lastOutput="";var o=$("output");o.classList.add("empty");o.innerHTML="";o.textContent="Your slop will appear here.";
+    setScore(0,false);$("verdict").textContent="Awaiting input.";$("chips").innerHTML='<span class="none">Nothing yet. Your writing is dangerously human.</span>';count();
+  });
+  $("copyBtn").addEventListener("click",function(){
+    if(!lastOutput)return;
+    navigator.clipboard&&navigator.clipboard.writeText(lastOutput);this.textContent="copied";var s=this;setTimeout(function(){s.textContent="copy";},1200);
+  });
+  var SEEDS=["I volunteered at a booth at a festival.","I made coffee for the team this morning.","I fixed a typo in the docs.","I watched four hours of Netflix.","I finally cleaned out my inbox.","We shipped a small bug fix.","I took a walk and it was nice.","My cat knocked a cup off the table.","I attended a webinar and left early.","I reorganized my desk drawer.","I ate lunch alone today.","I got a participation trophy in third grade.","I remembered to water my plant this week."];
+  $("surprise").addEventListener("click",function(){
+    $("input").value=SEEDS[Math.floor(Math.random()*SEEDS.length)];count();
+    var t=String(1+Math.floor(Math.random()*3));
+    [].forEach.call($("toneSeg").querySelectorAll("button"),function(x){x.setAttribute("aria-pressed",x.getAttribute("data-tone")===t?"true":"false");});
+    state.tone=parseInt(t,10);setMascot(t);
+    run();
+  });
+  $("saveBtn").addEventListener("click",downloadCard);
+  function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function wrapLines(ctx,text,maxW){var out=[];text.split("\n").forEach(function(para){if(para.trim()===""){out.push("");return;}var words=para.split(" "),line="";words.forEach(function(w){var test=line?line+" "+w:w;if(ctx.measureText(test).width>maxW&&line){out.push(line);line=w;}else line=test;});if(line)out.push(line);});return out;}
+  function renderCard(text,score){
+    var W=1040,P=52,maxW=W-P*2,lineH=42,headerH=152,scale=2;
+    var tmp=document.createElement("canvas").getContext("2d");tmp.font="400 30px Helvetica, Arial, sans-serif";
+    var lines=wrapLines(tmp,text,maxW);
+    var H=headerH+lines.length*lineH+130;
+    var c=document.createElement("canvas");c.width=W*scale;c.height=H*scale;
+    var ctx=c.getContext("2d");ctx.scale(scale,scale);
+    ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle="#e5e0d5";ctx.strokeRect(1,1,W-2,H-2);
+    var ax=P+34,ay=P+30;
+    var g=ctx.createLinearGradient(ax-34,ay-34,ax+34,ay+34);g.addColorStop(0,"#cf3418");g.addColorStop(1,"#e0a92a");
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(ax,ay,34,0,7);ctx.fill();
+    ctx.textAlign="center";ctx.textBaseline="middle";ctx.font="34px sans-serif";ctx.fillText("🧑",ax,ay+1);
+    ctx.textAlign="left";ctx.textBaseline="alphabetic";
+    var nx=P+82,ny=P+26;
+    ctx.fillStyle="#17161c";ctx.font="700 30px Helvetica, Arial, sans-serif";ctx.fillText("You",nx,ny);
+    var bx=nx+ctx.measureText("You").width+16;
+    ctx.font="700 20px 'Comic Sans MS', sans-serif";var btxt="Top Voice 🏆",bw=ctx.measureText(btxt).width+22;
+    ctx.fillStyle="#e0a92a";roundRect(ctx,bx,ny-23,bw,30,15);ctx.fill();
+    ctx.fillStyle="#241a00";ctx.fillText(btxt,bx+11,ny-2);
+    ctx.fillStyle="#8a8780";ctx.font="400 22px Helvetica, Arial, sans-serif";ctx.fillText("Thought Leader · 1st · 🌐",nx,ny+30);
+    ctx.fillStyle="#17161c";ctx.font="400 30px Helvetica, Arial, sans-serif";
+    var y=headerH;lines.forEach(function(l){ctx.fillText(l,P,y);y+=lineH;});
+    y+=8;ctx.strokeStyle="#e5e0d5";ctx.beginPath();ctx.moveTo(P,y);ctx.lineTo(W-P,y);ctx.stroke();y+=34;
+    var hot=score>=85;
+    ctx.fillStyle="#67645c";ctx.font="400 24px Helvetica, Arial, sans-serif";
+    ctx.fillText("👏 🔥 💯   "+(hot?"You and 2,847 others · 412 reposts":"You and a few others · 3 reposts"),P,y);
+    ctx.fillStyle="#b7b3aa";ctx.font="400 20px Helvetica, Arial, sans-serif";ctx.textAlign="right";
+    ctx.fillText("made with sloppify · Slop Score "+score+"%",W-P,H-28);ctx.textAlign="left";
+    if(hot){ctx.save();ctx.translate(W-160,96);ctx.rotate(11*Math.PI/180);ctx.strokeStyle="#cf3418";ctx.lineWidth=4;roundRect(ctx,-78,-26,156,52,8);ctx.stroke();ctx.fillStyle="#cf3418";ctx.font="700 26px 'Comic Sans MS', sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("CERTIFIED SLOP",0,0);ctx.restore();ctx.textAlign="left";ctx.textBaseline="alphabetic";}
+    return c;
+  }
+  function downloadCard(){
+    if(!lastOutput){$("input").focus();return;}
+    renderCard(lastOutput,lastScore).toBlob(function(blob){if(!blob)return;var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download="my-linkedin-slop.png";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},2000);});
+  }
+  $("takeLink").addEventListener("click",function(e){e.preventDefault();alert("Links to your post: the research + your actual take on AI slop. (Stub.)");});
+  function count(){$("inCount").textContent=$("input").value.length+" chars";}
+  $("input").addEventListener("input",count);count();
+
+  // ---------- examples ----------
+  var EX=[
+    {in:"We shipped instant payouts. No fees.",out:"Thrilled to share this. 🙌\n\nThis isn't just payouts. It's a movement.\n\n🚀 We architected instant capital transfer — with zero friction.\n\nLet me break that down.\n\n(And yes — \"architected\" just means \"built.\" But it sounds better.)\n\nGrateful for the journey. 🙏\n\n#Leadership #Growth #FinTech"},
+    {in:"I made a mistake and learned from it.",out:"Humbled and honored to share something. 🙏\n\nThree years ago, I almost quit.\n\n🔥 I crafted a mistake — and upskilled from it.\n\nWhat does that actually mean? Everything. It means everything.\n\nThe future belongs to the ones who show up.\n\n#Mindset #Growth #Resilience"},
+    {in:"Our new feature saves time.",out:"Excited to share a quick win. 🚀\n\nThis isn't just a feature. It's a movement.\n\n✨ Our next-generation execution empowers end users.\n\nI'm deeply passionate about efficiency.\n\nStudies show 87% of top performers agree.\n\nComfort is the enemy of the next level.\n\n#Innovation #AI #GameChanger"}
+  ];
+  var exWrap=$("examples");
+  EX.forEach(function(ex){
+    var d=document.createElement("div");d.className="ex";
+    d.innerHTML='<div class="ex-in"><span class="k">Human wrote</span>'+ex.in+'</div>'+
+      '<div class="ex-out"><span class="k">Sloppify returned</span>'+ex.out+'</div>'+
+      '<button class="ex-try">Load this above &uarr;</button>';
+    d.querySelector(".ex-try").addEventListener("click",function(){
+      $("input").value=ex.in;count();window.scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+      run();
+    });
+    exWrap.appendChild(d);
+  });
+  window.__slop={showResult:function(t,s){lastOutput=t;lastScore=s;var o=$("output"),op=$("outPanel");o.classList.remove("empty");op.classList.add("slopped");o.innerHTML=liCard(t,s);setScore(s,false);$("verdict").textContent=slopVerdict(s);$("scoreLabel").textContent="Slop Score";$("tellsLabel").textContent="Tells injected";$("chips").innerHTML='<span class="chip">✨ generated by AI</span>';popMascot();},getTone:function(){return state.tone;},score:scoreText,toast:slopToast};
+})();
+</script>
+<script>
+/* AI mode — only works on the deployed Cloudflare Pages site (it POSTs to the /api/slopify
+   function). Anywhere the endpoint is missing (e.g. opened as a bare file), it catches the
+   error and falls back to the client-side rules engine. */
+(function(){
+  var aiBtn=document.getElementById("aiBtn");
+  if(!aiBtn)return;
+  aiBtn.addEventListener("click",function(){
+    var api=window.__slop; if(!api)return;
+    var inp=document.getElementById("input"), text=inp.value;
+    if(!text.trim()){inp.focus();return;}
+    var tn=api.getTone(); var tone=tn===1?"professional":tn===3?"unhinged":"casual";
+    var token=(window.turnstile&&document.getElementById("tsw"))?(turnstile.getResponse()||""):"";
+    var old=aiBtn.textContent; aiBtn.disabled=true; aiBtn.textContent="✨ slopping…";
+    fetch("/api/slopify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text:text,tone:tone,token:token})})
+      .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
+      .then(function(res){
+        if(!res.ok||!res.d.text)throw new Error(res.d.message||res.d.error||"failed");
+        api.showResult(res.d.text,Math.max(92,api.score(res.d.text)));
+        api.toast("✨ freshly generated by a real AI. ironic, we know.");
+      })
+      .catch(function(e){ api.toast("AI is napping ("+e.message+") — using the rules engine."); document.getElementById("run").click(); })
+      .finally(function(){ aiBtn.disabled=false; aiBtn.textContent=old; if(window.turnstile){try{turnstile.reset();}catch(e){}} });
+  });
+})();
+</script>
+</body>
+</html>

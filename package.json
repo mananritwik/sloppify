@@ -1,0 +1,14 @@
+{
+  "name": "sloppify",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Turn anything into unbearable LinkedIn slop. A parody tool.",
+  "scripts": {
+    "dev": "wrangler pages dev . --port 8788",
+    "eval": "node golden-eval.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
