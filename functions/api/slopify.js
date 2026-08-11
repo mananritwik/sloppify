@@ -1,19 +1,32 @@
 // Cloudflare Pages Function — POST /api/slopify
-// Turns plain text into LinkedIn slop via Claude Haiku.
+// Turns plain text into LinkedIn slop via Claude.
 //
 // Security / cost controls, all server-side:
 //   - Anthropic key lives in a Pages secret (ANTHROPIC_API_KEY), never shipped to the client.
 //   - Optional Cloudflare Turnstile bot check (enabled only if TURNSTILE_SECRET_KEY is set).
 //   - Per-IP daily cap + a global daily cap via KV, so a viral spike can't run up the bill.
+//   - Tiered model: the first SONNET_LIFETIME calls use a premium model for great first
+//     impressions, then it steps down to Haiku; past the daily budget the client uses rules.
 //   - Hard input-length cap and a low max_tokens, so each call is cheap and bounded.
-//   - Task-locked system prompt: it will only slopify; prompt-injection just yields weirder slop.
-//   - Every call logs one JSON line (visible in `wrangler pages deployment tail` / dashboard).
+//   - Task-locked system prompt: prompt injection just yields weirder slop.
+//   - Request timeout so a hung upstream can't pin a Worker.
+//
+// NOTE on correctness: KV is eventually consistent and these counters are read-then-write, so a
+// concurrent burst can overshoot a cap slightly. That is an accepted tradeoff for a cost guard on a
+// joke tool — the constants are set low enough that a 2-3x overshoot is still cheap. If this ever
+// needed a hard, atomic ceiling, the upgrade is a Durable Object counter (noted in the README).
 
-const MODEL = "claude-haiku-4-5-20251001";
-const MAX_INPUT = 600;      // chars accepted from the user
-const MAX_TOKENS = 400;     // slop is short; this caps spend per call
-const PER_IP_DAILY = 40;    // free calls per IP per day
-const GLOBAL_DAILY = 5000;  // hard ceiling across everyone (wallet guard)
+const MODEL_GOOD  = "claude-sonnet-5";           // premium tier — first impressions
+const MODEL_CHEAP = "claude-haiku-4-5-20251001"; // steady-state tier
+// Verify these IDs against the current Anthropic model list before launch.
+
+const MAX_INPUT = 600;              // chars accepted from the user
+const MAX_TOKENS = 400;             // slop is short; caps spend per call
+const REQUEST_TIMEOUT_MS = 20000;   // abort a hung upstream call
+
+const PER_IP_DAILY = 30;            // free calls per IP per day
+const GLOBAL_DAILY = 3000;          // daily wallet ceiling; past this, clients fall back to rules
+const SONNET_LIFETIME = 500;        // first N AI calls EVER use the premium model, then step down
 
 const SYSTEM = `You are Sloppify, a satirical writing tool. You rewrite a short piece of writing as
 maximally cringe LinkedIn "thought leadership" — the exact style everyone mocks. You are a comedy
@@ -79,13 +92,8 @@ async function verifyTurnstile(token, ip, secret) {
   }
 }
 
-// KV counter with a 24h TTL. KV is eventually consistent, so under heavy concurrency this can
-// undercount slightly — fine for a cost guard on a joke tool.
-async function bump(kv, key, limit) {
-  const cur = parseInt((await kv.get(key)) || "0", 10);
-  if (cur >= limit) return false;
-  await kv.put(key, String(cur + 1), { expirationTtl: 86400 });
-  return true;
+async function readCount(kv, key) {
+  return parseInt((await kv.get(key)) || "0", 10);
 }
 
 export async function onRequestPost(context) {
@@ -103,53 +111,74 @@ export async function onRequestPost(context) {
   if (!text.trim()) return json({ error: "empty", message: "Give me something to ruin." }, 400);
   if (text.length > MAX_INPUT) return json({ error: "too_long", message: "Keep it under " + MAX_INPUT + " characters." }, 413);
 
-  // Bot check (only if you've configured Turnstile).
+  // Bot check (only if Turnstile is configured).
   if (env.TURNSTILE_SECRET_KEY) {
-    const ok = await verifyTurnstile(token, ip, env.TURNSTILE_SECRET_KEY);
-    if (!ok) return json({ error: "captcha", message: "Prove you're human (ironic, given the tool)." }, 403);
+    if (!(await verifyTurnstile(token, ip, env.TURNSTILE_SECRET_KEY)))
+      return json({ error: "captcha", message: "Prove you're human (ironic, we know)." }, 403);
   }
 
-  // Rate limits (only if you've bound a KV namespace named RL).
+  // Rate limits + model tiering (only if a KV namespace named RL is bound).
+  let model = MODEL_CHEAP;
   if (env.RL) {
     const day = new Date().toISOString().slice(0, 10);
-    if (!(await bump(env.RL, `ip:${ip}:${day}`, PER_IP_DAILY)))
+    const ipKey = `ip:${ip}:${day}`;
+
+    const ipCount = await readCount(env.RL, ipKey);
+    if (ipCount >= PER_IP_DAILY)
       return json({ error: "rate", message: "You've hit today's free limit. Come back tomorrow, thought leader." }, 429);
-    if (!(await bump(env.RL, `global:${day}`, GLOBAL_DAILY)))
-      return json({ error: "global", message: "Sloppify is at capacity today. The slop will return." }, 429);
+
+    const gCount = await readCount(env.RL, `global:${day}`);
+    if (gCount >= GLOBAL_DAILY)
+      return json({ fallback: true, reason: "budget" }, 200); // tell the client to use its rules engine
+
+    const life = await readCount(env.RL, "lifetime");
+    model = life < SONNET_LIFETIME ? MODEL_GOOD : MODEL_CHEAP;
+
+    await Promise.all([
+      env.RL.put(ipKey, String(ipCount + 1), { expirationTtl: 86400 }),
+      env.RL.put(`global:${day}`, String(gCount + 1), { expirationTtl: 86400 }),
+      env.RL.put("lifetime", String(life + 1)) // no TTL: premium tier is a lifetime budget
+    ]);
   }
 
   if (!env.ANTHROPIC_API_KEY) return json({ error: "unconfigured", message: "Server missing ANTHROPIC_API_KEY." }, 500);
 
   let out = "";
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), REQUEST_TIMEOUT_MS);
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
+      signal: ctl.signal,
       headers: {
         "x-api-key": env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
         "content-type": "application/json"
       },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         max_tokens: MAX_TOKENS,
         system: SYSTEM,
         messages: [...FEWSHOT, { role: "user", content: `TONE = ${tone}\n\nTEXT:\n${text}` }]
       })
     });
     if (!r.ok) {
-      console.log(JSON.stringify({ evt: "upstream_error", status: r.status, ip }));
+      console.log(JSON.stringify({ evt: "upstream_error", status: r.status, model }));
       return json({ error: "upstream", message: "The AI choked on its own slop. Try again." }, 502);
     }
     const data = await r.json();
     out = ((data.content && data.content[0] && data.content[0].text) || "").trim();
   } catch (e) {
-    console.log(JSON.stringify({ evt: "fetch_error", msg: String(e && e.message), ip }));
-    return json({ error: "server", message: "Something broke. It happens." }, 500);
+    const aborted = e && e.name === "AbortError";
+    console.log(JSON.stringify({ evt: aborted ? "timeout" : "fetch_error", model }));
+    return json({ error: "server", message: aborted ? "The AI took too long. Try again." : "Something broke. It happens." }, aborted ? 504 : 500);
+  } finally {
+    clearTimeout(timer);
   }
 
   if (!out) return json({ error: "empty_out", message: "The AI produced nothing. Rare humility." }, 502);
 
-  // one structured log line per successful call (observability)
-  console.log(JSON.stringify({ evt: "slopify", ip, tone, inLen: text.length, outLen: out.length, ts: Date.now() }));
-  return json({ text: out, tone });
+  // one structured log line per successful call (no PII — IPs are used for rate-limit keys only)
+  console.log(JSON.stringify({ evt: "slopify", model, tone, inLen: text.length, outLen: out.length, ts: Date.now() }));
+  return json({ text: out, tone, model });
 }

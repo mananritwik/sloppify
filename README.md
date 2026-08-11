@@ -7,7 +7,7 @@ Paste a plain sentence and Sloppify promotes it into humblebrag broetry — buzz
 Two engines:
 
 - **Rules engine** (client-side, instant, free) — the default. Works with zero backend.
-- **✨ AI slop** (Claude Haiku, server-side) — funnier, opt-in, rate-limited. Needs the deploy below.
+- **✨ AI slop** (Claude, server-side) — funnier, opt-in, rate-limited. The first ~500 calls ever use a premium model (Sonnet) for great first impressions, then it steps down to Haiku; once the daily budget is spent, the button quietly serves rules-grade slop. Needs the deploy below.
 
 ## Why it's built the way it is
 
@@ -37,10 +37,22 @@ ANTHROPIC_API_KEY=sk-ant-...
 2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git**, pick this repo.
    - Build command: *(none)* · Build output directory: `/`
 3. **Settings → Environment variables** → add a secret **`ANTHROPIC_API_KEY`**.
-4. **Optional but recommended — bot protection:**
-   - Create a **Turnstile** widget (dashboard → Turnstile). Put the **site key** into `index.html` (replace `YOUR_TURNSTILE_SITE_KEY`), and add the **secret key** as env var **`TURNSTILE_SECRET_KEY`**. If you skip this, the endpoint still works and stays protected by rate limits.
-5. **Optional but recommended — rate limits:**
-   - Create a **KV namespace**, then **Settings → Functions → KV namespace bindings** → bind it as **`RL`**. Without this the AI runs with no per-IP cap (fine for testing, not for a public launch).
+4. **Optional — bot protection (Turnstile):** off by default so a fresh deploy has no broken widget. To enable, create a **Turnstile** widget (dashboard → Turnstile), then:
+   - add its script + a widget div to `index.html`:
+     ```html
+     <!-- in <head> -->
+     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+     <!-- just after the .controls div -->
+     <div id="tsw" class="cf-turnstile" data-sitekey="YOUR_SITE_KEY" data-size="flexible"></div>
+     ```
+   - add the **secret key** as env var **`TURNSTILE_SECRET_KEY`**.
+
+   The front-end already sends the token and the function verifies it whenever the secret is set. Skip this and you're still protected by the rate limits below.
+5. **Recommended — rate limits + model tiering (KV):**
+   - Create a **KV namespace**, then **Settings → Functions → KV namespace bindings** → bind it as **`RL`**.
+   - This powers the per-IP cap, the daily wallet ceiling, **and** the premium → Haiku → rules tiering.
+   - Without it, the AI has no caps and always uses the cheap model (fine for local testing, not a public launch).
+   - Counters are read-then-write on KV (eventually consistent), so a burst can overshoot a cap slightly. If you ever need a hard atomic ceiling, swap the counter for a Durable Object.
 6. **Custom domain:** Settings → Custom domains → add **`sloppify.lol`** (buy it first; Cloudflare Registrar sells at cost).
 
 Every `git push` to the connected branch auto-deploys.
@@ -60,11 +72,13 @@ Passes when each case returns non-empty output with ≥3 slop signals and no ref
 
 | Constant | Default | What it does |
 |---|---|---|
-| `MODEL` | `claude-haiku-4-5` | cheap + fast |
+| `MODEL_GOOD` | `claude-sonnet-5` | premium tier for first impressions (verify the ID before launch) |
+| `MODEL_CHEAP` | `claude-haiku-4-5-20251001` | steady-state tier |
+| `SONNET_LIFETIME` | 500 | first N AI calls ever use the premium model, then step down |
+| `GLOBAL_DAILY` | 3000 | daily wallet ceiling; past this the client uses rules |
+| `PER_IP_DAILY` | 30 | free AI calls per IP per day |
 | `MAX_INPUT` | 600 | chars accepted per request |
 | `MAX_TOKENS` | 400 | caps spend per call |
-| `PER_IP_DAILY` | 40 | free calls per IP per day |
-| `GLOBAL_DAILY` | 5000 | hard wallet ceiling across everyone |
 
 ## License
 
