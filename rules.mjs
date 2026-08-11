@@ -139,7 +139,7 @@ export function detectTells(t) {
   return tells;
 }
 
-export function slopify(text, tone, chaos) {
+export function sloppify(text, tone, chaos) {
   var tells = {};
   function log(k, n) { tells[k] = (tells[k] || 0) + (n || 1); }
   var sents = sentences(text);

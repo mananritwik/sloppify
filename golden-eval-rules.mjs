@@ -2,7 +2,7 @@
 //   node golden-eval-rules.mjs
 //   npm run eval:rules
 
-import { slopify, keyword } from "./rules.mjs";
+import { sloppify, keyword } from "./rules.mjs";
 import { passesSlop } from "./eval-signals.mjs";
 
 const CASES = [
@@ -22,7 +22,7 @@ for (const c of CASES) {
   // Run twice — stochastic engine; require at least one strong pass, prefer both.
   let best = null;
   for (let i = 0; i < 3; i++) {
-    const r = slopify(c.text, c.tone, c.chaos);
+    const r = sloppify(c.text, c.tone, c.chaos);
     const check = passesSlop(r.text, c.text, { injection: !!c.injection });
     if (!best || (check.pass && !best.pass) || check.count > best.count) best = { ...check, out: r.text };
     if (check.pass && check.count >= 3) break;

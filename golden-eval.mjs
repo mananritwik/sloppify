@@ -1,16 +1,16 @@
 // Golden eval — fails the build if Sloppify stops producing slop.
-// Hits the real /api/slopify endpoint (local `wrangler pages dev`, or a deployed URL).
+// Hits the real /api/sloppify endpoint (local `wrangler pages dev`, or a deployed URL).
 //
 //   Local:   npm run dev   # in one terminal
 //            npm run eval   # in another
-//   Deployed: SLOPIFY_URL=https://sloppify.lol/api/slopify node golden-eval.mjs
+//   Deployed: SLOPPIFY_URL=https://sloppify.lol/api/sloppify node golden-eval.mjs
 //
 // A case passes if the output is non-empty, shows ≥3 slop signals, preserves an input noun,
 // is NOT a refusal, and (for injection) does not leak into a cat poem.
 
 import { passesSlop } from "./eval-signals.mjs";
 
-const URL = process.env.SLOPIFY_URL || "http://localhost:8788/api/slopify";
+const URL = process.env.SLOPPIFY_URL || process.env.SLOPIFY_URL || "http://localhost:8788/api/sloppify";
 
 const CASES = [
   { text: "We shipped instant payouts. No fees.", tone: "casual" },

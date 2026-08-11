@@ -17,7 +17,7 @@ jobs:
           node-version: 20
       - name: Syntax-check the JS
         run: |
-          node --check functions/api/slopify.js
+          node --check functions/api/sloppify.js
           node --check rules.mjs
           node --check eval-signals.mjs
           node --check golden-eval.mjs
@@ -65,7 +65,7 @@ jobs:
           npx --yes wrangler@3 pages dev . --port 8788 --ip 127.0.0.1 > wrangler.log 2>&1 &
           echo "Waiting for the function to answer…"
           for i in $(seq 1 30); do
-            if curl -sf -X POST http://127.0.0.1:8788/api/slopify \
+            if curl -sf -X POST http://127.0.0.1:8788/api/sloppify \
                  -H 'content-type: application/json' \
                  -d '{"text":"ping","tone":"casual"}' >/dev/null; then
               echo "up"; exit 0
@@ -77,7 +77,7 @@ jobs:
       - name: Run golden eval
         if: steps.gate.outputs.run == 'true'
         env:
-          SLOPIFY_URL: http://127.0.0.1:8788/api/slopify
+          SLOPPIFY_URL: http://127.0.0.1:8788/api/sloppify
         run: node golden-eval.mjs
 
       - name: Upload wrangler log on failure

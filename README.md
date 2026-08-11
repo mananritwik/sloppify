@@ -4,79 +4,89 @@
 
 Turn anything into an unbearable LinkedIn thought-leadership post. A parody.
 
-Paste a plain sentence and Sloppify promotes it into humblebrag broetry — buzzword swaps, "it's not X, it's a movement," em-dashes, a made-up statistic, performative gratitude, and hashtags. There's a tone dial (Professional / Casual / Unhinged), a pixel office-worker mascot who re-dresses by tone, a live Slop Score, a downloadable / shareable card, deeplinks (`?text=` / `?tone=`), and a hidden **SLOP MODE** (third click of the theme icon).
+Paste a plain sentence and Sloppify promotes it into humblebrag broetry — buzzword swaps, "it's not X, it's a movement," em-dashes, a made-up statistic, performative gratitude, and hashtags.
+
+**On the page:** tone dial (Professional / Casual / Unhinged), pixel mascot, Slop Score + tell chips, LinkedIn-style card, **copy / copy link / share / save image**, rotating starter seeds, before/after examples, deeplinks (`?text=` / `?tone=`), and hidden **SLOP MODE** (third click of the theme icon, or click the mascot).
 
 Two engines:
 
-- **Rules engine** (client-side, instant, free) — always available. Works with zero backend.
-- **✨ AI slop** (Claude, server-side) — funnier, rate-limited. The first ~150 calls ever use Sonnet 5 at **low effort** for first impressions, then Haiku; once the daily budget is spent, the button quietly serves rules-grade slop. Needs the deploy below.
+- **Rules engine** ([`rules.mjs`](rules.mjs), client-side, instant, free) — always available.
+- **✨ AI slop** (Claude via [`functions/api/sloppify.js`](functions/api/sloppify.js)) — funnier, rate-limited. First ~150 calls ever use Sonnet 5 at **low effort**, then Haiku; past the daily budget, the UI falls back to rules.
 
 ## Why it's built the way it is
 
 It's a joke, but it ships like a product:
 
-- The Anthropic key never touches the client — it lives in a Cloudflare secret and the browser only talks to `/api/slopify`.
-- The AI endpoint is bot-checked (optional Turnstile), rate-limited per-IP **and** globally per day, and input-capped, so a viral spike can't run up the bill.
-- The system prompt is task-locked: prompt injection just produces weirder slop.
-- Every call emits one structured log line. Offline `eval:rules` always gates PRs; live `eval` fails the build if AI output ever stops being slop.
+- The Anthropic key never touches the client — Cloudflare secret only; browser talks to `/api/sloppify`.
+- Per-IP + global daily caps (KV), input length cap, low `max_tokens`, optional Turnstile.
+- Task-locked system prompt: prompt injection just produces weirder slop.
+- Offline `npm run eval:rules` always gates PRs; live `npm run eval` checks the AI endpoint when a key is present.
+
+## Repo map
+
+| Path | Role |
+|---|---|
+| [`index.html`](index.html) | UI (CSS + page shell + module script) |
+| [`rules.mjs`](rules.mjs) | Client rules engine (also used by offline eval) |
+| [`functions/api/sloppify.js`](functions/api/sloppify.js) | Claude endpoint + rate limits |
+| [`eval-signals.mjs`](eval-signals.mjs) | Shared “is this still slop?” helpers |
+| [`golden-eval-rules.mjs`](golden-eval-rules.mjs) | Offline rules eval (CI) |
+| [`golden-eval.mjs`](golden-eval.mjs) | Live AI eval |
+| [`og.jpg`](og.jpg) | Open Graph image for LinkedIn / link previews |
+| [`wrangler.toml`](wrangler.toml) | Pages config + local KV binding `RL` |
 
 ## Run it locally
 
 ```bash
 npm install
-npm run dev            # wrangler pages dev, serves the site + the /api function at :8788
+npm run dev            # wrangler pages dev on :8788 (serves site + /api/sloppify)
+npm run eval:rules     # offline, no API key
 ```
 
-The rules engine works immediately. For the AI button locally, add a `.dev.vars` file (gitignored):
+For AI locally, add `.dev.vars` (gitignored):
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
+Local + production KV is wired in [`wrangler.toml`](wrangler.toml) (`binding = "RL"`). Cloudflare Pages picks that up on deploy (you'll also see it under Settings → Functions). Restart `npm run dev` after changing the binding.
+
 ## Deploy (GitHub → Cloudflare Pages)
 
-1. Push this repo to GitHub.
-2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git**, pick this repo.
-   - Build command: *(none)* · Build output directory: `/`
-3. **Settings → Environment variables** → add a secret **`ANTHROPIC_API_KEY`**.
-4. **Leave Turnstile off for launch** unless you also add the widget to `index.html`. Setting `TURNSTILE_SECRET_KEY` without a widget breaks the AI button. To enable later: create a Turnstile widget, add its script + div to `index.html`, then set the secret.
-5. **Required for public launch — rate limits + model tiering (KV):**
-   - Create a **KV namespace**, then **Settings → Functions → KV namespace bindings** → bind it as **`RL`**.
-   - This powers the per-IP cap, the daily wallet ceiling, **and** the Sonnet → Haiku → rules tiering.
-   - Without it, the AI has no caps and always uses Haiku (fine for local testing, not a public launch).
-   - Counters are read-then-write on KV (eventually consistent), so a burst can overshoot a cap slightly. If you ever need a hard atomic ceiling, swap the counter for a Durable Object.
-6. **Custom domain:** Settings → Custom domains → add **`sloppify.lol`** (buy it first; Cloudflare Registrar sells at cost).
+Push to the connected branch; Pages auto-deploys.
+- Build command: *(none)* · Build output directory: `/`
 
-Every `git push` to the connected branch auto-deploys.
+**This project’s live setup**
+- Custom domain **`sloppify.lol`** (Cloudflare Registrar) — done
+- Secret **`ANTHROPIC_API_KEY`** in Pages — done
+- KV **`RL`** via `wrangler.toml` (visible in the Pages dashboard) — done
+- **Turnstile:** leave off unless you also add the widget to `index.html`
 
-### Pre-launch checklist
+### Still optional
 
-- [ ] `ANTHROPIC_API_KEY` set in Cloudflare Pages
-- [ ] KV namespace bound as `RL`
-- [ ] Custom domain `sloppify.lol` live
-- [ ] Turnstile **not** set (unless widget is wired)
-- [ ] Optional: GitHub Actions secret `ANTHROPIC_API_KEY` so the live AI eval runs on `main`
+- [ ] GitHub Actions secret `ANTHROPIC_API_KEY` so the live AI golden eval runs on `main` (rules eval already always runs)
+- [ ] Confirm `https://sloppify.lol` serves the latest deploy after each push
 
-## Eval before you ship
+## Eval
 
 ```bash
-npm run eval:rules                            # offline, no key — always run this
+npm run eval:rules                            # always — no key
 npm run dev                                   # terminal 1
-npm run eval                                  # terminal 2 — hits localhost AI endpoint
-# or against production:
-SLOPIFY_URL=https://sloppify.lol/api/slopify npm run eval
+npm run eval                                  # terminal 2 — AI endpoint
+# production:
+SLOPPIFY_URL=https://sloppify.lol/api/sloppify npm run eval
 ```
 
-Rules eval passes when each seed returns non-empty slop with ≥3 signals, preserves an input noun, and doesn't refuse. AI eval adds a prompt-injection case that must still come back as slop (not a cat poem).
+Passes when output is non-empty, has ≥3 slop signals, preserves an input noun, and isn’t a refusal. AI eval also includes a prompt-injection case that must stay slop (not a cat poem).
 
-## Tunable knobs (`functions/api/slopify.js`)
+## Tunable knobs (`functions/api/sloppify.js`)
 
 | Constant | Default | What it does |
 |---|---|---|
-| `MODEL_GOOD` | `claude-sonnet-5` | premium tier for first impressions (`effort: low`) |
+| `MODEL_GOOD` | `claude-sonnet-5` | first-impression tier (`effort: low`) |
 | `MODEL_CHEAP` | `claude-haiku-4-5-20251001` | steady-state tier |
-| `SONNET_LIFETIME` | 150 | first N AI calls ever use the premium model, then step down |
-| `GLOBAL_DAILY` | 800 | daily wallet ceiling; past this the client uses rules |
+| `SONNET_LIFETIME` | 150 | first N AI calls ever use Sonnet, then Haiku |
+| `GLOBAL_DAILY` | 800 | daily AI ceiling; past this → rules fallback |
 | `PER_IP_DAILY` | 15 | free AI calls per IP per day |
 | `MAX_INPUT` | 600 | chars accepted per request |
 | `MAX_TOKENS` | 320 | caps spend per call |

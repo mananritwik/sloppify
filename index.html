@@ -318,7 +318,7 @@
 </footer>
 
 <script type="module">
-import { slopify, scoreText, detectTells, LABELS } from "./rules.mjs";
+import { sloppify, scoreText, detectTells, LABELS } from "./rules.mjs";
 
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
@@ -514,7 +514,7 @@ function run(forceTone, chaos) {
   if (!text.trim()) { $("input").focus(); return; }
   if (text.length > MAX_INPUT) { slopToast("Keep it under " + MAX_INPUT + " characters."); return; }
   const tone = forceTone || state.tone;
-  const r = slopify(text, tone, chaos);
+  const r = sloppify(text, tone, chaos);
   showResult(r.text, r.tells, "rules", (tone - 1) * 5 + (chaos ? 8 : 0));
 }
 
@@ -535,7 +535,7 @@ function generate(tone, chaos) {
   if (!text.trim()) { $("input").focus(); return; }
   if (text.length > MAX_INPUT) { slopToast("Keep it under " + MAX_INPUT + " characters."); return; }
   setBusy(true);
-  fetch("/api/slopify", {
+  fetch("/api/sloppify", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ text, tone: toneName(chaos ? 3 : tone), token: "" })
