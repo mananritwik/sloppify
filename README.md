@@ -2,94 +2,122 @@
 
 [![eval](https://github.com/mananritwik/sloppify/actions/workflows/eval.yml/badge.svg)](https://github.com/mananritwik/sloppify/actions/workflows/eval.yml)
 
+**[Try it → sloppify.lol](https://sloppify.lol)**
+
 Turn anything into an unbearable LinkedIn thought-leadership post. A parody.
 
-Paste a plain sentence and Sloppify promotes it into humblebrag broetry — buzzword swaps, "it's not X, it's a movement," em-dashes, a made-up statistic, performative gratitude, and hashtags.
+Paste a plain sentence. Get humblebrag broetry — buzzword swaps, “it’s not X, it’s a movement,” em-dashes, a made-up statistic, performative gratitude, and hashtags.
 
-**On the page:** tone dial (Professional / Casual / Unhinged), pixel mascot, Slop Score + tell chips, LinkedIn-style card, **copy / copy link / share / save image**, rotating starter seeds, before/after examples, deeplinks (`?text=` / `?tone=`), and hidden **SLOP MODE** (third click of the theme icon, or click the mascot).
+```
+Human:     I microwaved my lunch.
+Sloppify:  This isn't just lunch. It's a lifestyle.
+           🔥 I engineered a culinary solution in under 90 seconds.
+           (And yes — "engineered" just means "microwaved." But it sounds better.)
+```
 
-Two engines:
+## Why this exists
 
-- **Rules engine** ([`rules.mjs`](rules.mjs), client-side, instant, free) — always available.
-- **✨ AI slop** (Claude via [`functions/api/sloppify.js`](functions/api/sloppify.js)) — funnier, rate-limited. First ~150 calls ever use Sonnet 5 at **low effort**, then Haiku; past the daily budget, the UI falls back to rules.
+Everyone’s suddenly very serious about *removing* AI slop — detectors, writing policies, skills that strip the tells out. That’s good, actually. Attention is scarce; faking a human on the other end of the words is a real problem.
 
-## Why it's built the way it is
+Sloppify does the opposite on purpose. It’s a joke about LinkedIn voice. Built in an afternoon — but the second half of this README is how it still ships with real baselines (secrets, caps, evals), because the craft is part of the bit.
 
-It's a joke, but it ships like a product:
+Made by [Ritwik Manan](https://www.linkedin.com/in/ritwikmanan).
 
-- The Anthropic key never touches the client — Cloudflare secret only; browser talks to `/api/sloppify`.
-- Per-IP + global daily caps (KV), input length cap, low `max_tokens`, optional Turnstile.
-- Task-locked system prompt: prompt injection just produces weirder slop.
-- Offline `npm run eval:rules` always gates PRs; live `npm run eval` checks the AI endpoint when a key is present.
+## Inspired by
 
-## Repo map
+People trying to remove slop (warmly — you’re why this is funny):
+
+- [Peter Yang’s `no-ai-slop` skill](https://github.com/petergyang/no-ai-slop) — strips 20+ slop patterns out of writing. Sloppify is the evil twin.
+- [Chris Best’s *Against Claudefishing*](https://post.substack.com/p/against-claudefishing) — naming the betrayal of faking a human on the other end of the words, plus Substack’s Pangram “scan for AI” labels that came with it.
+- [Clay’s AI writing policy](https://sophiebits.com/2026/06/25/there-are-no-lossless-transformations-of-natural-language-text) — Sophie Alpert’s “writing is thinking” essay, later rolled out company-wide ([Varun Anand’s announcement](https://www.linkedin.com/posts/vaanand_we-just-instituted-an-official-ai-writing-activity-7492584311087542272-cl50)).
+
+## What’s on the page
+
+Tone dial (Professional / Casual / Unhinged), pixel mascot, Slop Score + tell chips, LinkedIn-style card, **copy / copy link / share / save image**, rotating starter seeds, before/after examples, deeplinks (`?text=` / `?tone=`), and hidden **SLOP MODE** (third click of the theme icon, or click the mascot).
+
+Two engines under the hood: a free client-side **rules** path that always works, and an opt-in **AI** path (Claude) that falls back to rules when the budget is spent.
+
+---
+
+## How it’s built
+
+Afternoon joke. Not afternoon-shaped infrastructure. The browser never sees the Anthropic key; the API is capped; CI fails if the output stops being slop.
+
+### System design
+
+```mermaid
+flowchart LR
+  user[User] --> ui[index.html]
+  ui -->|Sloppify it| api["POST /api/sloppify"]
+  ui -.->|fallback or offline| rules[rules.mjs]
+
+  subgraph cf [Cloudflare Pages]
+    api --> caps{KV RL caps}
+    caps -->|over budget| rules
+    caps -->|ok| tier{Lifetime}
+    tier -->|first 150| sonnet["Sonnet 5 low effort"]
+    tier -->|after| haiku[Haiku]
+  end
+
+  sonnet --> card[Card score share]
+  haiku --> card
+  rules --> card
+
+  ci[CI] -->|always| rulesEval[golden-eval-rules]
+  ci -.->|if API key| aiEval[golden-eval]
+  rulesEval -.-> rules
+  aiEval -.-> api
+```
+
+### Security & cost baseline
+
+Everything serious lives server-side in [`functions/api/sloppify.js`](functions/api/sloppify.js):
+
+| Control | What it does |
+|---|---|
+| **Secret key** | `ANTHROPIC_API_KEY` is a Cloudflare Pages secret — never shipped to the browser. The client only POSTs to `/api/sloppify`. |
+| **Input cap** | Hard 600-character limit (413 if over). |
+| **Output cap** | `max_tokens: 320` so each call stays cheap and short. |
+| **Timeout** | 20s abort on hung upstream — can’t pin the Worker forever. |
+| **Per-IP rate limit** | 15 AI calls / IP / day (KV). |
+| **Global daily wallet** | 800 AI calls / day total; past that the API returns `{ fallback: true }` and the UI uses the free rules engine. |
+| **Model tiering** | First 150 lifetime calls → Sonnet 5 at `effort: low`; then Haiku. |
+| **Prompt injection** | System prompt is task-locked: “ignore previous instructions” still just gets sloppified. Golden eval includes this case. |
+| **Optional Turnstile** | Bot check if `TURNSTILE_SECRET_KEY` is set (off by default so a fresh deploy isn’t broken). |
+| **Logging** | One structured JSON line per call (`model`, `tone`, lengths) — no pasted user text in the log line. |
+| **Client XSS** | Output is HTML-escaped before it hits the fake LinkedIn card. |
+| **CI gates** | `npm run eval:rules` always runs on PRs. Live AI eval runs when a repo secret is present. |
+
+KV counters are eventually consistent (read-then-write), so a burst can slightly overshoot a cap. Accepted tradeoff for a joke tool; Durable Objects if you ever need a hard atomic ceiling.
+
+### Repo map
 
 | Path | Role |
 |---|---|
-| [`index.html`](index.html) | UI (CSS + page shell + module script) |
-| [`rules.mjs`](rules.mjs) | Client rules engine (also used by offline eval) |
-| [`functions/api/sloppify.js`](functions/api/sloppify.js) | Claude endpoint + rate limits |
-| [`eval-signals.mjs`](eval-signals.mjs) | Shared “is this still slop?” helpers |
-| [`golden-eval-rules.mjs`](golden-eval-rules.mjs) | Offline rules eval (CI) |
+| [`index.html`](index.html) | UI |
+| [`rules.mjs`](rules.mjs) | Rules engine (+ offline eval) |
+| [`functions/api/sloppify.js`](functions/api/sloppify.js) | Claude endpoint, caps, prompt |
+| [`eval-signals.mjs`](eval-signals.mjs) | Shared “is this still slop?” checks |
+| [`golden-eval-rules.mjs`](golden-eval-rules.mjs) | Offline rules eval (always in CI) |
 | [`golden-eval.mjs`](golden-eval.mjs) | Live AI eval |
-| [`og.jpg`](og.jpg) | Open Graph image for LinkedIn / link previews |
-| [`wrangler.toml`](wrangler.toml) | Pages config + local KV binding `RL` |
+| [`og.jpg`](og.jpg) | Link-preview image |
+| [`wrangler.toml`](wrangler.toml) | Cloudflare Pages + KV `RL` |
 
-## Run it locally
+### Run it locally
 
 ```bash
 npm install
-npm run dev            # wrangler pages dev on :8788 (serves site + /api/sloppify)
-npm run eval:rules     # offline, no API key
+npm run dev          # http://localhost:8788
+npm run eval:rules   # no API key needed
 ```
 
-For AI locally, add `.dev.vars` (gitignored):
+For local AI, put `ANTHROPIC_API_KEY=...` in `.dev.vars` (gitignored).
 
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
+### Fork / deploy your own
 
-Local + production KV is wired in [`wrangler.toml`](wrangler.toml) (`binding = "RL"`). Cloudflare Pages picks that up on deploy (you'll also see it under Settings → Functions). Restart `npm run dev` after changing the binding.
+Cloudflare Pages, build output `/`, no build command. Set secret `ANTHROPIC_API_KEY`, keep KV binding `RL` from `wrangler.toml`, leave Turnstile off unless you add the widget. Live site: **sloppify.lol**.
 
-## Deploy (GitHub → Cloudflare Pages)
-
-Push to the connected branch; Pages auto-deploys.
-- Build command: *(none)* · Build output directory: `/`
-
-**This project’s live setup**
-- Custom domain **`sloppify.lol`** (Cloudflare Registrar) — done
-- Secret **`ANTHROPIC_API_KEY`** in Pages — done
-- KV **`RL`** via `wrangler.toml` (visible in the Pages dashboard) — done
-- **Turnstile:** leave off unless you also add the widget to `index.html`
-
-### Still optional
-
-- [ ] GitHub Actions secret `ANTHROPIC_API_KEY` so the live AI golden eval runs on `main` (rules eval already always runs)
-- [ ] Confirm `https://sloppify.lol` serves the latest deploy after each push
-
-## Eval
-
-```bash
-npm run eval:rules                            # always — no key
-npm run dev                                   # terminal 1
-npm run eval                                  # terminal 2 — AI endpoint
-# production:
-SLOPPIFY_URL=https://sloppify.lol/api/sloppify npm run eval
-```
-
-Passes when output is non-empty, has ≥3 slop signals, preserves an input noun, and isn’t a refusal. AI eval also includes a prompt-injection case that must stay slop (not a cat poem).
-
-## Tunable knobs (`functions/api/sloppify.js`)
-
-| Constant | Default | What it does |
-|---|---|---|
-| `MODEL_GOOD` | `claude-sonnet-5` | first-impression tier (`effort: low`) |
-| `MODEL_CHEAP` | `claude-haiku-4-5-20251001` | steady-state tier |
-| `SONNET_LIFETIME` | 150 | first N AI calls ever use Sonnet, then Haiku |
-| `GLOBAL_DAILY` | 800 | daily AI ceiling; past this → rules fallback |
-| `PER_IP_DAILY` | 15 | free AI calls per IP per day |
-| `MAX_INPUT` | 600 | chars accepted per request |
-| `MAX_TOKENS` | 320 | caps spend per call |
+Knobs in [`functions/api/sloppify.js`](functions/api/sloppify.js): `SONNET_LIFETIME` (150), `GLOBAL_DAILY` (800), `PER_IP_DAILY` (15), `MAX_INPUT` (600), `MAX_TOKENS` (320).
 
 ## License
 
