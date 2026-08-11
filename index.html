@@ -367,7 +367,7 @@
   function cap(s){s=s.trim();return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
   function lower(s){return s?s.charAt(0).toLowerCase()+s.slice(1):s;}
   function stripEnd(s){return s.replace(/[.!?]+$/,"");}
-  function stripEmoji(s){return s.replace(/[\u{1F300}-\u{1FAFF}☀-➿]/gu,"").replace(/\s{2,}/g," ").trim();}
+  function stripEmoji(s){return s.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu,"").replace(/\s{2,}/g," ").trim();}
   function pick(a){return a[Math.floor(Math.random()*a.length)];}
   function chance(p){return Math.random()<p;}
   function shuffleTake(a,n){var c=a.slice();for(var i=c.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=c[i];c[i]=c[j];c[j]=t;}return c.slice(0,n);}
