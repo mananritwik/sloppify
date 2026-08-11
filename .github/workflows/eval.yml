@@ -18,10 +18,24 @@ jobs:
       - name: Syntax-check the JS
         run: |
           node --check functions/api/slopify.js
+          node --check rules.mjs
+          node --check eval-signals.mjs
           node --check golden-eval.mjs
+          node --check golden-eval-rules.mjs
+
+  rules-eval:
+    runs-on: ubuntu-latest
+    needs: syntax
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Offline rules golden eval
+        run: npm run eval:rules
 
   golden-eval:
-    # Spins up the real Pages Function locally and runs the slop eval against it.
+    # Spins up the real Pages Function locally and runs the AI slop eval against it.
     # Skips itself (rather than failing) until you've added the ANTHROPIC_API_KEY repo secret.
     runs-on: ubuntu-latest
     needs: syntax
@@ -38,7 +52,7 @@ jobs:
         run: |
           if [ -z "$KEY" ]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::ANTHROPIC_API_KEY secret not set — skipping the live slop eval."
+            echo "::notice::ANTHROPIC_API_KEY secret not set — skipping the live AI slop eval. Rules eval still gates PRs."
           else
             echo "run=true" >> "$GITHUB_OUTPUT"
           fi
@@ -65,3 +79,11 @@ jobs:
         env:
           SLOPIFY_URL: http://127.0.0.1:8788/api/slopify
         run: node golden-eval.mjs
+
+      - name: Upload wrangler log on failure
+        if: failure() && steps.gate.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wrangler-log
+          path: wrangler.log
+          if-no-files-found: ignore

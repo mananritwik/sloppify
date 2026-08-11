@@ -5,9 +5,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Sloppify turns anything into an unbearable LinkedIn thought-leadership post. A parody.">
-<meta property="og:title" content="Sloppify &#x2014; make your writing worse, professionally">
-<meta property="og:description" content="Turn anything into unbearable LinkedIn slop. A parody tool.">
-<title>Sloppify &#x2014; make your writing worse, professionally</title>
+<meta property="og:title" content="Sloppify — make your writing worse, professionally">
+<meta property="og:description" content="Paste a normal sentence. Get unbearable LinkedIn broetry. A parody tool.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sloppify.lol/">
+<meta property="og:image" content="https://sloppify.lol/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<title>Sloppify — make your writing worse, professionally</title>
 <style>
   :root {
     --paper:#f4f1ea; --surface:#fffdf8; --raise:#fbf9f3;
@@ -43,14 +47,15 @@
   body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
   .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px;}
   a{color:inherit;}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 
   header{border-bottom:1px solid var(--line);position:sticky;top:0;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);z-index:5;}
   .bar{display:flex;align-items:center;justify-content:space-between;padding:15px 0;gap:16px;}
   .brand{display:flex;align-items:baseline;gap:11px;min-width:0;}
   .logo{font-weight:800;font-size:23px;letter-spacing:-0.035em;}
   .logo .d{color:var(--accent);}
-  .tag{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  @media(max-width:620px){.tag{display:none;}}
+  .tagline{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  @media(max-width:620px){.tagline{display:none;}}
   .toggle{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer;}
   .toggle:hover{border-color:var(--accent);}
 
@@ -59,7 +64,6 @@
   .hero h1 .red{color:var(--accent);}
   .hero p{margin:0;color:var(--muted);font-size:17px;max-width:58ch;}
 
-  /* segmented option rows */
   .options{display:flex;flex-wrap:wrap;gap:20px;padding:24px 0 6px;}
   .optgroup{display:flex;flex-direction:column;gap:7px;}
   .optgroup .glabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);}
@@ -79,19 +83,22 @@
   .panel.slopped .plabel{color:var(--slop-ink);}
   .mini{font-family:var(--mono);font-size:11px;color:var(--faint);background:transparent;border:0;cursor:pointer;font-variant-numeric:tabular-nums;}
   .mini:hover{color:var(--accent);}
+  .mini:disabled{opacity:.45;cursor:not-allowed;}
   textarea{width:100%;flex:1;border:0;background:transparent;color:var(--ink);resize:vertical;font-family:var(--sans);font-size:15.5px;line-height:1.6;padding:16px;min-height:230px;outline:none;}
   textarea::placeholder{color:var(--faint);}
   .out{flex:1;min-height:230px;max-height:min(52vh,480px);overflow-y:auto;padding:16px;font-size:15.5px;line-height:1.72;white-space:pre-wrap;word-wrap:break-word;}
   .out.empty{color:var(--faint);display:flex;align-items:center;justify-content:center;text-align:center;font-style:italic;}
+  .over{color:var(--accent);}
 
   .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:16px 0 4px;}
   .btn{font:inherit;font-weight:700;font-size:14px;cursor:pointer;border-radius:9px;padding:12px 20px;border:1px solid transparent;transition:transform .06s ease,filter .15s ease;}
   .btn:active{transform:translateY(1px);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
   .btn.primary{background:var(--accent);color:#fff;}
   .btn.gold{background:var(--gold);color:var(--gold-ink);}
-  .btn.primary:hover,.btn.gold:hover{filter:brightness(1.05);}
+  .btn.primary:hover:not(:disabled),.btn.gold:hover:not(:disabled){filter:brightness(1.05);}
   .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line);}
-  .btn.ghost:hover{border-color:var(--accent);color:var(--accent);}
+  .btn.ghost:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
   .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .hint{color:var(--faint);font-size:12.5px;font-family:var(--mono);}
 
@@ -100,24 +107,21 @@
   .gauge,.tells{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
   .glabel2{font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:8px;}
   .score{font-weight:800;font-size:56px;letter-spacing:-0.03em;line-height:1;margin:2px 0 6px;font-variant-numeric:tabular-nums;color:var(--gold);}
-  .score.low{color:var(--good);}
   .score .pct{font-size:26px;color:var(--faint);}
   .verdict{font-size:13.5px;color:var(--muted);min-height:2.6em;}
+  .engine{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:6px;}
   .track{height:9px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:12px;}
   .fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--accent));transition:width .6s cubic-bezier(.2,.8,.2,1);}
-  .fill.low{background:linear-gradient(90deg,var(--good),var(--good));}
   .chips{display:flex;flex-wrap:wrap;gap:8px;}
   .chip{font-family:var(--mono);font-size:12px;padding:5px 9px;border-radius:6px;background:var(--slop-bg);border:1px solid var(--slop-line);color:var(--ink);display:inline-flex;gap:7px;align-items:center;}
   .chip b{color:var(--slop-ink);font-variant-numeric:tabular-nums;}
-  .chip.rm{background:transparent;border-color:var(--line);}
-  .chip.rm b{color:var(--good);}
+  .chip.engine-chip{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);}
   .tells .none{color:var(--faint);font-size:13.5px;font-style:italic;}
-  .tag{font-family:"Comic Sans MS","Comic Sans",cursive;}
+  .li-badge{font-family:"Comic Sans MS","Comic Sans",cursive;font-size:11px;background:var(--gold);color:var(--gold-ink);padding:1px 8px;border-radius:999px;font-weight:700;}
   .li-card{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 15px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
   .li-head{display:flex;gap:10px;align-items:center;margin-bottom:11px;}
   .li-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--gold));display:flex;align-items:center;justify-content:center;font-size:22px;flex:none;}
   .li-name{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.2;}
-  .li-badge{font-family:"Comic Sans MS","Comic Sans",cursive;font-size:11px;background:var(--gold);color:var(--gold-ink);padding:1px 8px;border-radius:999px;font-weight:700;}
   .li-sub{font-size:12px;color:var(--faint);margin-top:2px;}
   .li-body{font-size:15px;line-height:1.7;white-space:pre-wrap;word-wrap:break-word;color:var(--ink);}
   .li-react{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
@@ -126,7 +130,9 @@
   .score.wow{animation:pop .5s ease;}
   @keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.18);}100%{transform:scale(1);}}
   .mascot-wrap{margin-left:auto;}
-  .mascot{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 18px;}
+  .mascot{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 18px;cursor:pointer;font:inherit;color:inherit;}
+  .mascot:hover{border-color:var(--accent);}
+  .mascot:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .mascot-cap{font-family:"Comic Sans MS","Comic Sans",cursive;font-size:12px;color:var(--muted);white-space:nowrap;}
   .dude{width:84px;height:84px;display:block;image-rendering:pixelated;animation:bob 2.4s ease-in-out infinite;transform-origin:50% 92%;}
   @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-2px);}}
@@ -154,7 +160,6 @@
   .mascot[data-tone="3"] .eyes-normal{display:none;} .mascot[data-tone="3"] .acc-shades{display:block;}
   .mascot[data-tone="3"] .mouth-neutral{display:none;} .mascot[data-tone="3"] .mouth-wild{display:block;}
   .mascot[data-tone="3"] .acc-party{display:block;} .mascot[data-tone="3"] .acc-chain{display:block;}
-  .mascot{cursor:pointer;} .mascot:hover{border-color:var(--accent);}
   .floaters{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:3;}
   .floaters span{position:absolute;bottom:-50px;animation:floatup linear infinite;filter:drop-shadow(0 2px 2px rgba(0,0,0,.15));}
   @keyframes floatup{0%{transform:translateY(0) rotate(0);opacity:0;}10%{opacity:.92;}90%{opacity:.92;}100%{transform:translateY(-112vh) rotate(360deg);opacity:0;}}
@@ -164,7 +169,7 @@
   body.slopmode *{font-family:"Comic Sans MS","Comic Sans",cursive !important;}
   body.slopmode header{background:rgba(255,253,248,.92);}
   body.slopmode .logo{color:#18171d;}
-  body.slopmode .tag{color:#57544c;}
+  body.slopmode .tagline{color:#57544c;}
   body.slopmode .toggle{color:#18171d;background:#fffdf8;border-color:#e5e0d5;}
   body.slopmode .glabel,body.slopmode .hint,body.slopmode .foot,body.slopmode .foot .made,body.slopmode .flex-note{color:#fff;text-shadow:1px 1px 0 #000,2px 2px 0 rgba(0,0,0,.45);}
   body.slopmode .foot a.cta{color:#fff;border-bottom-color:#ffd84d;}
@@ -180,7 +185,6 @@
   .section-h{font-weight:800;font-size:23px;letter-spacing:-0.02em;margin:44px 0 4px;}
   .section-sub{color:var(--muted);font-size:14.5px;margin:0 0 18px;}
   .examples{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 14px;scrollbar-width:thin;}
-  @media(max-width:860px){.examples{grid-template-columns:1fr;}}
   .ex{flex:0 0 300px;scroll-snap-align:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
   .ex .ex-in{padding:14px 15px;font-size:14px;color:var(--muted);border-bottom:1px dashed var(--line);}
   .ex .ex-in .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:5px;}
@@ -194,8 +198,11 @@
 
   footer{border-top:1px solid var(--line);margin-top:36px;}
   .foot{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;justify-content:space-between;padding:22px 0 34px;color:var(--muted);font-size:13.5px;}
+  .foot-left{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;}
   .foot a.cta{text-decoration:none;border-bottom:2px solid var(--accent);padding-bottom:1px;font-weight:600;}
   .foot a.cta:hover{color:var(--accent);}
+  .foot .by a{color:var(--ink);font-weight:600;text-decoration:none;border-bottom:1px solid var(--line);}
+  .foot .by a:hover{border-bottom-color:var(--accent);color:var(--accent);}
   .foot .made{font-family:var(--mono);font-size:12px;color:var(--faint);}
 
   @media(prefers-reduced-motion:reduce){.fill{transition:none;}.btn{transition:none;}.score.wow{animation:none;}.dude{animation:none;}.mascot.pop .dude{animation:none;}}
@@ -207,9 +214,9 @@
   <div class="wrap bar">
     <div class="brand">
       <span class="logo">Sloppify<span class="d">.</span></span>
-      <span class="tag">make your writing worse, professionally</span>
+      <span class="tagline">make your writing worse, professionally</span>
     </div>
-    <button class="toggle" id="themeBtn" aria-label="Theme" title="Theme" style="min-width:42px;text-align:center;font-size:15px">&#x2600;&#xFE0F;</button>
+    <button class="toggle" id="themeBtn" aria-label="Theme: light" title="Cycle theme" style="min-width:42px;text-align:center;font-size:15px">&#x2600;&#xFE0F;</button>
   </div>
 </header>
 
@@ -223,14 +230,14 @@
     <div class="optgroup" id="toneWrap">
       <span class="glabel">Tone</span>
       <div class="seg" id="toneSeg" role="group" aria-label="Tone">
-        <button data-tone="1" aria-pressed="false">Professional</button>
-        <button data-tone="2" aria-pressed="true">Casual</button>
-        <button data-tone="3" aria-pressed="false">Unhinged</button>
+        <button type="button" data-tone="1" aria-pressed="false">Professional</button>
+        <button type="button" data-tone="2" aria-pressed="true">Casual</button>
+        <button type="button" data-tone="3" aria-pressed="false">Unhinged</button>
       </div>
     </div>
     <div class="optgroup mascot-wrap">
       <span class="glabel">Today's thought leader</span>
-      <div class="mascot" id="mascot" data-tone="2">
+      <button type="button" class="mascot" id="mascot" data-tone="2" aria-label="Toggle Slop Mode">
         <svg class="dude" viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">
           <g class="acc-party"><polygon points="12,0 8,6 16,6"/><rect class="pom" x="11" y="0" width="2" height="2"/></g>
           <g class="hair-normal"><rect x="6" y="3" width="12" height="4"/><rect x="5" y="5" width="2" height="3"/><rect x="17" y="5" width="2" height="3"/></g>
@@ -251,26 +258,26 @@
           <g class="acc-coffee"><rect class="steam" x="19" y="17" width="1" height="2"/><rect class="mug" x="18" y="19" width="4" height="4"/><rect class="mug" x="22" y="20" width="1" height="2"/></g>
         </svg>
         <span class="mascot-cap" id="mascotCap">Cozy &amp; caffeinated</span>
-      </div>
+      </button>
     </div>
   </div>
 
   <section class="work">
     <div class="panel">
-      <div class="phead"><span class="plabel" id="inLabel">Your writing</span><span class="mini" id="inCount">0 chars</span></div>
-      <textarea id="input" placeholder="Paste something you actually wrote. A sentence is enough.">We shipped instant payouts today. No extra fees. Just open the app and the money is there.</textarea>
+      <div class="phead"><span class="plabel" id="inLabel">Your writing</span><span class="mini" id="inCount">0 / 600</span></div>
+      <textarea id="input" maxlength="600" placeholder="Paste something you actually wrote. A sentence is enough."></textarea>
     </div>
     <div class="panel slopped" id="outPanel">
-      <div class="phead"><span class="plabel" id="outLabel">Certified slop</span><span style="display:flex;gap:14px"><button class="mini" id="saveBtn">save image</button><button class="mini" id="copyBtn">copy</button></span></div>
-      <div class="out empty" id="output">Your slop will appear here.</div>
+      <div class="phead"><span class="plabel" id="outLabel">Certified slop</span><span style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="mini" id="linkBtn">copy link</button><button type="button" class="mini" id="shareBtn">share</button><button type="button" class="mini" id="saveBtn">save image</button><button type="button" class="mini" id="copyBtn">copy</button></span></div>
+      <div class="out empty" id="output" aria-live="polite">Your slop will appear here.</div>
     </div>
   </section>
 
   <div class="controls">
-    <button class="btn primary" id="run">Sloppify it &#x2728;</button>
-    <button class="btn gold" id="runHard" title="max chaos">Sloppify harder &#x1F525;</button>
-    <button class="btn ghost" id="surprise">&#x1F3B2; Surprise me</button>
-    <button class="btn ghost" id="reset">Reset</button>
+    <button type="button" class="btn primary" id="run">Sloppify it &#x2728;</button>
+    <button type="button" class="btn gold" id="runHard" title="max chaos">Sloppify harder &#x1F525;</button>
+    <button type="button" class="btn ghost" id="surprise">&#x1F3B2; Surprise me</button>
+    <button type="button" class="btn ghost" id="reset">Reset</button>
     <span class="hint" id="hint">early birds get AI-grade slop; after that it's instant rules-mode. same energy.</span>
   </div>
 
@@ -279,6 +286,7 @@
       <span class="glabel2" id="scoreLabel">Slop Score</span>
       <div class="score"><span id="score">0</span><span class="pct">%</span></div>
       <div class="verdict" id="verdict">Awaiting input.</div>
+      <div class="engine" id="engineLabel"></div>
       <div class="track"><div class="fill" id="fill"></div></div>
     </div>
     <div class="tells">
@@ -287,417 +295,536 @@
     </div>
   </section>
 
+  <div class="sr-only" id="live" aria-live="polite" aria-atomic="true"></div>
+
   <h2 class="section-h">Certified before &amp; after</h2>
   <p class="section-sub">Real sentences, professionally ruined. Tap one to load it above. (Scroll for more &#x2192;)</p>
   <div class="examples" id="examples"></div>
 
   <div class="flex-note">
     <span class="k">the bit</span>
-    <span>Yes, this is a joke. No, the hosted version isn't held together with tape: server-side key, per-IP + daily rate caps, a task-locked prompt, request logging, and a golden-eval check that fails the build if the output stops being slop. It's a toy. It still ships like a product.</span>
+    <span>Yes, this is a joke. No, the hosted version isn't held together with tape: server-side key, per-IP + daily rate caps, a task-locked prompt, request logging, and a golden-eval check that fails the build if the output stops being slop. It's a toy. It still ships like a product — because how you ship the joke is part of the joke.</span>
   </div>
 </main>
 
 <footer>
   <div class="wrap foot">
-    <span><a class="cta" href="https://github.com/mananritwik/sloppify" target="_blank" rel="noopener">See how it's built (and why) &rarr;</a></span>
+    <div class="foot-left">
+      <span class="by">by <a href="https://www.linkedin.com/in/ritwikmanan" target="_blank" rel="noopener">Ritwik Manan</a></span>
+      <a class="cta" href="https://github.com/mananritwik/sloppify" target="_blank" rel="noopener">See how it's built (and why) &rarr;</a>
+    </div>
     <span class="made">built in an afternoon while the internet argued about em-dashes</span>
   </div>
 </footer>
 
-<script>
-(function(){
-  "use strict";
-  var $=function(id){return document.getElementById(id);};
-  var root=document.documentElement;
+<script type="module">
+import { slopify, scoreText, detectTells, LABELS } from "./rules.mjs";
 
-  var mode=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
-  function applyMode(){
-    if(mode!=="slop")root.setAttribute("data-theme",mode);
-    document.body.classList.toggle("slopmode",mode==="slop");
-    $("themeBtn").textContent=mode==="light"?"\u2600\ufe0f":mode==="dark"?"\ud83c\udf19":"\ud83e\udd2a";
-    $("themeBtn").setAttribute("aria-label",mode==="slop"?"Slop mode (click to exit)":"Theme");
+const $ = (id) => document.getElementById(id);
+const root = document.documentElement;
+const MAX_INPUT = 600;
+const ATTR = "\n\n— made with sloppify.lol";
+
+let lastOutput = "";
+let lastScore = 0;
+let lastEngine = "";
+let state = { tone: 2 };
+let prevTheme = "light";
+
+// ---------- theme ----------
+const saved = localStorage.getItem("sloppify-theme");
+let mode = saved === "light" || saved === "dark" || saved === "slop"
+  ? saved
+  : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+prevTheme = mode === "slop" ? "light" : mode;
+
+function themeLabel(m) {
+  return m === "light" ? "Theme: light" : m === "dark" ? "Theme: dark" : "Slop mode (click to exit)";
+}
+function applyMode() {
+  if (mode !== "slop") root.setAttribute("data-theme", mode);
+  else root.removeAttribute("data-theme");
+  document.body.classList.toggle("slopmode", mode === "slop");
+  $("themeBtn").textContent = mode === "light" ? "☀️" : mode === "dark" ? "🌙" : "🤪";
+  $("themeBtn").setAttribute("aria-label", themeLabel(mode));
+  try { localStorage.setItem("sloppify-theme", mode); } catch (_) {}
+}
+function setMode(m) {
+  const wasSlop = mode === "slop";
+  if (mode === "light" || mode === "dark") prevTheme = mode;
+  mode = m;
+  if (m === "slop" && !wasSlop) {
+    setTone(3);
+    spawnFloaters();
+    slopToast("🎉 you found SLOP MODE 🎉");
   }
-  function setMode(m){
-    var wasSlop=(mode==="slop");mode=m;
-    if(m==="slop"&&!wasSlop){[].forEach.call($("toneSeg").querySelectorAll("button"),function(x){x.setAttribute("aria-pressed",x.getAttribute("data-tone")==="3"?"true":"false");});state.tone=3;setMascot("3");spawnFloaters();slopToast("\ud83c\udf89 SLOP MODE ACTIVATED \ud83c\udf89");}
-    if(m!=="slop"&&wasSlop){var f=$("floaters");if(f)f.remove();slopToast("sanity restored. for now.");}
-    applyMode();
+  if (m !== "slop" && wasSlop) {
+    const f = $("floaters");
+    if (f) f.remove();
+    slopToast("sanity restored. for now.");
   }
-  $("themeBtn").addEventListener("click",function(){setMode(mode==="light"?"dark":mode==="dark"?"slop":"light");});
   applyMode();
+}
+$("themeBtn").addEventListener("click", () => {
+  setMode(mode === "light" ? "dark" : mode === "dark" ? "slop" : "light");
+});
+if (mode === "slop") spawnFloaters();
+applyMode();
 
-  // ---------- data ----------
-  var BANNED=[
-    ["use","utilize"],["uses","utilizes"],["using","leveraging"],["used","leveraged"],
-    ["help","empower"],["helps","empowers"],["helped","empowered"],
-    ["make","craft"],["makes","crafts"],["made","crafted"],["making","crafting"],
-    ["build","architect"],["built","architected"],["building","architecting"],
-    ["good","game-changing"],["great","transformative"],["big","robust"],["small","lean"],
-    ["change","transform"],["changed","transformed"],["improve","optimize"],["improved","optimized"],["better","more robust"],
-    ["idea","insight"],["ideas","insights"],["think","ideate"],["thought","strategic insight"],
-    ["start","spearhead"],["started","spearheaded"],["team","cross-functional stakeholders"],
-    ["problem","pain point"],["problems","pain points"],["customer","end user"],["customers","end users"],
-    ["plan","strategic roadmap"],["goal","north star"],["meeting","alignment sync"],["learn","upskill"],
-    ["show","showcase"],["money","capital"],["fast","velocity-driven"],["work","execution"],
-    ["new","next-generation"],["easy","frictionless"],["hard","non-trivial"],["talk","align"],["users","end users"],
-    ["volunteer","spearhead"],["volunteered","spearheaded"],["volunteering","spearheading"],
-    ["festival","large-scale cultural activation"],["booth","experiential brand touchpoint"],["event","high-impact convening"],
-    ["class","immersive learning environment"],["club","member-driven ecosystem"],["studied","conducted deep research into"],
-    ["internship","formative leadership crucible"],["organized","orchestrated"],["organize","orchestrate"],
-    ["joined","onboarded into"],["won","secured a competitive outcome in"],["practiced","iterated on"],
-    ["coffee","a hand-crafted beverage experience"],["friends","my personal board of advisors"],["party","a curated networking experience"],
-    ["game","a high-stakes competitive engagement"],["cleaned","optimized the operational footprint of"],["cooked","engineered a culinary solution"],["sold","drove revenue through"]
-  ];
-  var REVERSE={}; BANNED.forEach(function(p){ if(!REVERSE[p[1].toLowerCase()]) REVERSE[p[1].toLowerCase()]=p[0]; });
-
-  var OPENERS={1:["Let me be clear.","A quick reflection.","Worth stating plainly."],2:["Here's the thing.","Unpopular opinion:","Nobody tells you this."],3:["I wasn't going to post this, but here goes.","Grab a coffee. This one's a ride.","A mentor once told me something I'll never forget."]};
-  var INSIGHTS=["Most people miss this.","Read that again.","Let that sink in.","This changed everything.","And that's the part nobody talks about."];
-  var STATS=["Studies show 87% of top performers agree.","9 out of 10 leaders won't admit this.","The data doesn't lie: engagement is up 3x.","Fun fact: that's a 40% efficiency unlock."];
-  var KICKERS=["Because at the end of the day, people don't buy products. They buy belief.","The future belongs to the ones who show up.","Stay hungry. Stay humble. Stay building.","Small steps. Big vision. Zero excuses.","Comfort is the enemy of the next level.","Your network is your net worth."];
-  var STORY=["Three years ago I was broke, doubted, and running on instinct.","I almost quit that week.","Everyone said it couldn't be done."];
-  var HASHES=["#Leadership","#Growth","#Mindset","#Innovation","#AI","#ThoughtLeadership","#GameChanger","#Hustle","#Grateful"];
-  var CTAS=["Agree? \u267b\ufe0f Repost to share the wisdom.","Save this post. \ud83d\udd16 Thank me later.","Follow for more takes like this. \ud83d\ude80","Who needs to hear this today? \ud83d\udc47","Drop a \ud83d\udcaf if this resonates."];
-  var EMO={1:["\ud83d\udcc8","\ud83d\udd11"],2:["\ud83d\ude80","\u2728","\ud83d\udca1"],3:["\ud83d\ude80","\ud83d\udd25","\ud83d\udcc8","\u2728","\ud83d\udca1","\ud83d\ude4c","\ud83d\udcaf"]};
-  var ANNOUNCE={1:["I'm pleased to share a brief reflection.","Reflecting on a recent milestone."],2:["Thrilled to share this. \ud83d\ude4c","Humbled and honored to announce something.","Excited to share a quick win. \ud83d\ude80"],3:["Beyond thrilled to FINALLY share this. \ud83d\ude80","Humbled. Honored. Grateful. And a little emotional.","I've been sitting on this one for weeks. Here goes. \ud83d\ude4f"]};
-  var OVEREXPLAIN=["Let me break that down.","In plain English? The same thing \u2014 but with more conviction.","What does that actually mean? Everything. It means everything.","To put it simply: we did the thing, and the thing was transformative."];
-  var GRATITUDE={2:["Grateful for the journey. \ud83d\ude4f","Onwards and upwards. \ud83d\ude4c"],3:["Grateful. Humbled. Still processing. \ud83d\ude4f","This is what the grind is all about. \ud83e\udee1"]};
-  var NEGPARALLEL=["This isn't just {t}. It's a movement.","This isn't just {t}. It's a mindset.","This isn't just {t}. It's a lifestyle.","This isn't just {t}. It's everything.","We didn't just do {t}. We redefined it."];
-  var RHETORICAL=["Can we talk about {t} for a second?","Ever feel like {t} is criminally underrated?","What if I told you {t} could change everything?"];
-  var HOTTAKE=["Unpopular opinion:","Hot take:","Controversial, but here goes:"];
-  var ONEWORD=["Growth.","Relentless.","Vision.","Grit.","Momentum.","Alone.","Unstoppable."];
-  var LESSONS=["Vision beats comfort.","Execution beats ideas.","Consistency is the real hack.","Your network is your net worth.","Discomfort is just growth in a trench coat."];
-
-  var STRIP_STARTS=[].concat(OPENERS[1],OPENERS[2],OPENERS[3],ANNOUNCE[1],ANNOUNCE[2],ANNOUNCE[3],OVEREXPLAIN,GRATITUDE[2],GRATITUDE[3],INSIGHTS,STATS,KICKERS,STORY,CTAS,HOTTAKE,["This isn't just","We didn't just do","Can we talk about","Ever feel like","What if I told you","What did this teach","Save this. Follow","Here's what I learned","Here's what nobody","I'm deeply passionate","(And yes"]);
-
-  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
-  function sentences(t){return t.replace(/\s+/g," ").trim().match(/[^.!?]+[.!?]*/g)||[];}
-  function cap(s){s=s.trim();return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
-  function lower(s){return s?s.charAt(0).toLowerCase()+s.slice(1):s;}
-  function stripEnd(s){return s.replace(/[.!?]+$/,"");}
-  function stripEmoji(s){return s.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu,"").replace(/\s{2,}/g," ").trim();}
-  function pick(a){return a[Math.floor(Math.random()*a.length)];}
-  function chance(p){return Math.random()<p;}
-  function shuffleTake(a,n){var c=a.slice();for(var i=c.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=c[i];c[i]=c[j];c[j]=t;}return c.slice(0,n);}
-  function fill(s,topic){return s.replace(/\{t\}/g,topic).replace(/\{T\}/g,cap(topic));}
-  function shout(s){var m=s.match(/\b[a-z]{4,10}\b/gi);if(!m||!m.length)return s;var w=m[Math.floor(Math.random()*m.length)];return s.replace(new RegExp("\\b"+w+"\\b"),w.toUpperCase());}
-  function matchCase(src,rep){return /^[A-Z]/.test(src)?cap(rep):rep;}
-  function keyword(t){
-    var stop={the:1,a:1,an:1,we:1,to:1,and:1,of:1,in:1,on:1,at:1,for:1,is:1,it:1,our:1,your:1,just:1,so:1,my:1,this:1,that:1,with:1,you:1,today:1,are:1,was:1,were:1,about:1,really:1};
-    var w=(t.toLowerCase().match(/[a-z][a-z\-]{3,}/g)||[]).filter(function(x){return !stop[x];});
-    var nouny=w.filter(function(x){return !/(ed|ing|ly)$/.test(x);});
-    return nouny[0]||w[0]||"this";
+// ---------- helpers ----------
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+function announce(msg) { $("live").textContent = msg; }
+function slopToast(msg) {
+  const t = document.createElement("div");
+  t.className = "slop-toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 400); }, 2400);
+}
+function toneName(t) { return t === 1 ? "professional" : t === 3 ? "unhinged" : "casual"; }
+function toneFromParam(v) {
+  if (v === "1" || v === "professional") return 1;
+  if (v === "3" || v === "unhinged") return 3;
+  if (v === "2" || v === "casual") return 2;
+  return null;
+}
+function setTone(t) {
+  state.tone = t;
+  [].forEach.call($("toneSeg").querySelectorAll("button"), (x) => {
+    x.setAttribute("aria-pressed", x.getAttribute("data-tone") === String(t) ? "true" : "false");
+  });
+  setMascot(String(t));
+}
+function setMascot(v) {
+  const m = $("mascot");
+  if (!m) return;
+  m.setAttribute("data-tone", v);
+  const caps = { "1": "Buttoned up", "2": "Cozy & caffeinated", "3": "Fully unhinged" };
+  $("mascotCap").textContent = caps[v] || "";
+  popMascot();
+}
+function popMascot() {
+  const m = $("mascot");
+  if (!m) return;
+  m.classList.remove("pop");
+  void m.offsetWidth;
+  m.classList.add("pop");
+  setTimeout(() => m.classList.remove("pop"), 520);
+}
+function spawnFloaters() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if ($("floaters")) return;
+  const em = ["🚀","💼","📈","✨","🔥","💯","🙌","🧠","💡","♻️","🏆","🤝"];
+  const wrap = document.createElement("div");
+  wrap.className = "floaters";
+  wrap.id = "floaters";
+  for (let i = 0; i < 18; i++) {
+    const s = document.createElement("span");
+    s.textContent = em[i % em.length];
+    s.style.left = (Math.random() * 100).toFixed(1) + "%";
+    s.style.animationDuration = (4 + Math.random() * 5).toFixed(2) + "s";
+    s.style.animationDelay = (Math.random() * 4).toFixed(2) + "s";
+    s.style.fontSize = (18 + (Math.random() * 26 | 0)) + "px";
+    wrap.appendChild(s);
   }
+  document.body.appendChild(wrap);
+}
 
-  // ---------- slopify ----------
-  function slopify(text,tone,chaos){
-    var tells={};
-    function log(k,n){tells[k]=(tells[k]||0)+(n||1);}
-    var sents=sentences(text); if(!sents.length) return {text:"",tells:tells};
+// ---------- score / cards ----------
+let animScore = 0, animReq = null;
+function setScore(target) {
+  const s = $("score"), f = $("fill");
+  f.style.width = target + "%";
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    animScore = target; s.textContent = target; return;
+  }
+  cancelAnimationFrame(animReq);
+  const start = animScore;
+  let t0 = null;
+  animReq = requestAnimationFrame(function loop(ts) {
+    if (!t0) t0 = ts;
+    const p = Math.min(1, (ts - t0) / 600);
+    animScore = Math.round(start + (target - start) * p);
+    s.textContent = animScore;
+    if (p < 1) animReq = requestAnimationFrame(loop);
+  });
+  setTimeout(() => { animScore = target; s.textContent = String(target); }, 700);
+}
+function slopVerdict(s) {
+  if (s >= 90) return "Peak slop. Chef's kiss. Do not publish.";
+  if (s >= 70) return "Certified thought leader. Reads like a robot in a blazer.";
+  if (s >= 45) return "Getting there. A recruiter would squint.";
+  return "Suspiciously readable. Add more emoji.";
+}
+function liCard(text, score) {
+  const hot = score >= 85;
+  const stamp = hot ? '<div class="li-stamp">Certified Slop</div>' : "";
+  const reacts = hot ? "You and 2,847 others" : "You and a few others";
+  const reposts = hot ? "412 reposts" : "3 reposts";
+  return '<div class="li-card">' + stamp +
+    '<div class="li-head"><div class="li-av">🧑‍💼</div><div><div class="li-name">You <span class="li-badge">Top Voice 🏆</span></div><div class="li-sub">Thought Leader · 1st · 🌐</div></div></div>' +
+    '<div class="li-body">' + esc(text) + '</div>' +
+    '<div class="li-react">👏 🔥 💯 <b>' + reacts + '</b> · ' + reposts + '</div></div>';
+}
+function renderChips(map, engine) {
+  const chips = $("chips");
+  const keys = Object.keys(map).filter((k) => k !== "ai" && k !== "rules");
+  const engineChip = engine
+    ? '<span class="chip engine-chip">' + (engine === "ai" ? "✨ AI" : "⚙️ Rules") + '</span>'
+    : "";
+  if (!keys.length && !engineChip) {
+    chips.innerHTML = '<span class="none">Nothing to report.</span>';
+    return;
+  }
+  chips.innerHTML = engineChip + keys.map((k) =>
+    '<span class="chip">+ ' + (LABELS[k] || k) + ' <b>' + map[k] + '</b></span>'
+  ).join("");
+}
+function showResult(text, tells, engine, toneBoost) {
+  lastOutput = text;
+  lastEngine = engine;
+  const base = scoreText(text);
+  const score = Math.min(99, base + (toneBoost || 0));
+  lastScore = score;
+  const o = $("output"), op = $("outPanel");
+  o.classList.remove("empty");
+  op.classList.add("slopped");
+  o.innerHTML = liCard(text, score);
+  $("outLabel").textContent = "Certified slop";
+  setScore(score);
+  const scEl = document.querySelector(".score");
+  scEl.classList.remove("wow");
+  if (score >= 90 && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    void scEl.offsetWidth;
+    scEl.classList.add("wow");
+  }
+  $("verdict").textContent = slopVerdict(score);
+  $("engineLabel").textContent = engine === "ai" ? "Engine: AI" : "Engine: Rules";
+  $("scoreLabel").textContent = "Slop Score";
+  $("tellsLabel").textContent = "Tells injected";
+  renderChips(tells, engine);
+  popMascot();
+  announce("Slop score " + score + " percent. " + (engine === "ai" ? "AI" : "Rules") + " engine.");
+}
 
-    var swaps=0, firstSwap=null;
-    var body=sents.map(function(s){
-      BANNED.forEach(function(p){
-        var re=new RegExp("\\b"+p[0]+"\\b","gi");
-        s=s.replace(re,function(m){swaps++;if(!firstSwap)firstSwap=[m,p[1]];return matchCase(m,p[1]);});
-      });
-      return s.trim();
-    });
-    if(swaps)log("buzzword",swaps);
+function run(forceTone, chaos) {
+  const text = $("input").value;
+  if (!text.trim()) { $("input").focus(); return; }
+  if (text.length > MAX_INPUT) { slopToast("Keep it under " + MAX_INPUT + " characters."); return; }
+  const tone = forceTone || state.tone;
+  const r = slopify(text, tone, chaos);
+  showResult(r.text, r.tells, "rules", (tone - 1) * 5 + (chaos ? 8 : 0));
+}
 
-    var dashes=0;
-    for(var i=0;i<body.length-1;i++){
-      if(body[i].length<90&&(tone>=2||chance(.5))){
-        body[i]=stripEnd(body[i])+" \u2014 "+lower(stripEnd(body[i+1]))+".";
-        body.splice(i+1,1);dashes++;
+function setBusy(b) {
+  ["run","runHard","surprise","reset","saveBtn","copyBtn","shareBtn","linkBtn"].forEach((id) => {
+    const el = $(id); if (el) el.disabled = b;
+  });
+  const o = $("output");
+  if (b) {
+    o.classList.remove("empty");
+    o.setAttribute("aria-busy", "true");
+    o.innerHTML = '<div class="li-card" style="text-align:center;color:var(--muted)">✍️ slopping…</div>';
+  } else o.removeAttribute("aria-busy");
+}
+
+function generate(tone, chaos) {
+  const text = $("input").value;
+  if (!text.trim()) { $("input").focus(); return; }
+  if (text.length > MAX_INPUT) { slopToast("Keep it under " + MAX_INPUT + " characters."); return; }
+  setBusy(true);
+  fetch("/api/slopify", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text, tone: toneName(chaos ? 3 : tone), token: "" })
+  })
+    .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+    .then((res) => {
+      if (res.ok && res.d.text && !res.d.fallback) {
+        const tells = detectTells(res.d.text);
+        showResult(res.d.text, tells, "ai", 0);
+        const premium = res.d.model && String(res.d.model).indexOf("sonnet") > -1;
+        slopToast(premium ? "✨ premium slop, hot off the model" : "✨ freshly generated by AI");
+        return;
       }
+      if (res.d && res.d.error === "rate") slopToast(res.d.message || "Daily AI limit hit — rules mode.");
+      run(chaos ? 3 : tone, chaos);
+    })
+    .catch(() => run(chaos ? 3 : tone, chaos))
+    .finally(() => setBusy(false));
+}
+
+// ---------- controls ----------
+$("toneSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  setTone(parseInt(b.getAttribute("data-tone"), 10));
+});
+$("mascot").addEventListener("click", () => {
+  setMode(mode === "slop" ? prevTheme : "slop");
+});
+$("run").addEventListener("click", () => generate(state.tone, false));
+$("runHard").addEventListener("click", () => generate(3, true));
+$("reset").addEventListener("click", () => {
+  $("input").value = "";
+  lastOutput = ""; lastScore = 0; lastEngine = "";
+  const o = $("output");
+  o.classList.add("empty"); o.innerHTML = ""; o.textContent = "Your slop will appear here.";
+  setScore(0);
+  $("verdict").textContent = "Awaiting input.";
+  $("engineLabel").textContent = "";
+  $("chips").innerHTML = '<span class="none">Nothing yet. Your writing is dangerously human.</span>';
+  count();
+});
+
+async function copyText(text, btn, okLabel) {
+  try {
+    await navigator.clipboard.writeText(text);
+    if (btn) { const prev = btn.textContent; btn.textContent = okLabel || "copied"; setTimeout(() => { btn.textContent = prev; }, 1200); }
+    announce("Copied.");
+    return true;
+  } catch (_) {
+    slopToast("Couldn't copy — select the text instead.");
+    announce("Copy failed.");
+    return false;
+  }
+}
+$("copyBtn").addEventListener("click", () => {
+  if (!lastOutput) return;
+  copyText(lastOutput + ATTR, $("copyBtn"), "copied");
+});
+$("linkBtn").addEventListener("click", () => {
+  const text = $("input").value.trim();
+  if (!text) { $("input").focus(); return; }
+  const u = new URL(location.origin + location.pathname);
+  u.searchParams.set("text", text.slice(0, MAX_INPUT));
+  u.searchParams.set("tone", toneName(state.tone));
+  copyText(u.toString(), $("linkBtn"), "link copied");
+});
+
+const SEEDS = [
+  "I volunteered at a booth at a festival.",
+  "I made coffee for the team this morning.",
+  "I fixed a typo in the docs.",
+  "I watched four hours of Netflix.",
+  "I finally cleaned out my inbox.",
+  "We shipped a small bug fix.",
+  "I took a walk and it was nice.",
+  "My cat knocked a cup off the table.",
+  "I attended a webinar and left early.",
+  "I reorganized my desk drawer.",
+  "I ate lunch alone today.",
+  "I got a participation trophy in third grade.",
+  "I remembered to water my plant this week.",
+  "I microwaved my lunch.",
+  "I closed three browser tabs.",
+  "I put on real pants for a Zoom call.",
+  "I liked my own LinkedIn post.",
+  "I moved a Jira ticket to Done.",
+  "I replied 'circle back' in a meeting."
+];
+$("surprise").addEventListener("click", () => {
+  $("input").value = SEEDS[Math.floor(Math.random() * SEEDS.length)];
+  count();
+  setTone(1 + Math.floor(Math.random() * 3));
+  generate(state.tone, false);
+});
+
+// ---------- canvas share ----------
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function wrapLines(ctx, text, maxW) {
+  const out = [];
+  text.split("\n").forEach((para) => {
+    if (para.trim() === "") { out.push(""); return; }
+    let line = "";
+    para.split(" ").forEach((w) => {
+      const test = line ? line + " " + w : w;
+      if (ctx.measureText(test).width > maxW && line) { out.push(line); line = w; }
+      else line = test;
+    });
+    if (line) out.push(line);
+  });
+  return out;
+}
+function renderCard(text, score) {
+  const W = 1040, P = 52, maxW = W - P * 2, lineH = 42, headerH = 152, scale = 2;
+  const tmp = document.createElement("canvas").getContext("2d");
+  tmp.font = "400 30px Helvetica, Arial, sans-serif";
+  const lines = wrapLines(tmp, text, maxW);
+  const H = headerH + lines.length * lineH + 130;
+  const c = document.createElement("canvas");
+  c.width = W * scale; c.height = H * scale;
+  const ctx = c.getContext("2d");
+  ctx.scale(scale, scale);
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "#e5e0d5"; ctx.strokeRect(1, 1, W - 2, H - 2);
+  const ax = P + 34, ay = P + 30;
+  const g = ctx.createLinearGradient(ax - 34, ay - 34, ax + 34, ay + 34);
+  g.addColorStop(0, "#cf3418"); g.addColorStop(1, "#e0a92a");
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ax, ay, 34, 0, 7); ctx.fill();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "34px sans-serif";
+  ctx.fillText("🧑", ax, ay + 1);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  const nx = P + 82, ny = P + 26;
+  ctx.fillStyle = "#17161c"; ctx.font = "700 30px Helvetica, Arial, sans-serif";
+  ctx.fillText("You", nx, ny);
+  const bx = nx + ctx.measureText("You").width + 16;
+  ctx.font = "700 20px 'Comic Sans MS', sans-serif";
+  const btxt = "Top Voice 🏆", bw = ctx.measureText(btxt).width + 22;
+  ctx.fillStyle = "#e0a92a"; roundRect(ctx, bx, ny - 23, bw, 30, 15); ctx.fill();
+  ctx.fillStyle = "#241a00"; ctx.fillText(btxt, bx + 11, ny - 2);
+  ctx.fillStyle = "#8a8780"; ctx.font = "400 22px Helvetica, Arial, sans-serif";
+  ctx.fillText("Thought Leader · 1st · 🌐", nx, ny + 30);
+  ctx.fillStyle = "#17161c"; ctx.font = "400 30px Helvetica, Arial, sans-serif";
+  let y = headerH;
+  lines.forEach((l) => { ctx.fillText(l, P, y); y += lineH; });
+  y += 8; ctx.strokeStyle = "#e5e0d5"; ctx.beginPath(); ctx.moveTo(P, y); ctx.lineTo(W - P, y); ctx.stroke(); y += 34;
+  const hot = score >= 85;
+  ctx.fillStyle = "#67645c"; ctx.font = "400 24px Helvetica, Arial, sans-serif";
+  ctx.fillText("👏 🔥 💯   " + (hot ? "You and 2,847 others · 412 reposts" : "You and a few others · 3 reposts"), P, y);
+  ctx.fillStyle = "#b7b3aa"; ctx.font = "400 20px Helvetica, Arial, sans-serif"; ctx.textAlign = "right";
+  ctx.fillText("sloppify.lol · Slop Score " + score + "%", W - P, H - 28); ctx.textAlign = "left";
+  if (hot) {
+    ctx.save();
+    ctx.translate(W - 160, 96);
+    ctx.rotate(11 * Math.PI / 180);
+    ctx.strokeStyle = "#cf3418"; ctx.lineWidth = 4;
+    roundRect(ctx, -78, -26, 156, 52, 8); ctx.stroke();
+    ctx.fillStyle = "#cf3418"; ctx.font = "700 26px 'Comic Sans MS', sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("CERTIFIED SLOP", 0, 0);
+    ctx.restore();
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+  return c;
+}
+function cardBlob() {
+  return new Promise((resolve) => {
+    if (!lastOutput) { resolve(null); return; }
+    renderCard(lastOutput, lastScore).toBlob((blob) => resolve(blob), "image/png");
+  });
+}
+async function downloadCard() {
+  if (!lastOutput) { $("input").focus(); return; }
+  const blob = await cardBlob();
+  if (!blob) return;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "my-linkedin-slop.png";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+$("saveBtn").addEventListener("click", downloadCard);
+
+async function shareSlop() {
+  if (!lastOutput) { $("input").focus(); return; }
+  const text = lastOutput + ATTR;
+  const blob = await cardBlob();
+  const file = blob ? new File([blob], "my-linkedin-slop.png", { type: "image/png" }) : null;
+  try {
+    if (navigator.share) {
+      const data = { title: "My LinkedIn slop", text };
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) data.files = [file];
+      await navigator.share(data);
+      announce("Shared.");
+      return;
     }
-    if(dashes)log("em-dash",dashes);
-
-    var topic=keyword(text), lines=[], emoPool=EMO[tone];
-
-    if(chaos){lines.push("\ud83e\uddf5 "+pick(ANNOUNCE[3])); log("humblebrag-announcement",1);}
-    else{var r=Math.random();
-      if(r<0.45){lines.push(pick(ANNOUNCE[tone])); log("humblebrag-announcement",1);}
-      else if(r<0.75){lines.push(pick(HOTTAKE)); log("throat-clearing",1);}
-      else{lines.push(fill(pick(RHETORICAL),topic)); log("rhetorical-opener",1);}}
-    if((chaos||tone>=3)&&chance(.7)){lines.push(pick(STORY)); log("fake-origin-story",1);}
-    if(chance(.8)){lines.push(fill(pick(NEGPARALLEL),topic)); log("it's-not-X-it's-Y",1);}
-
-    body.forEach(function(s,idx){
-      var line=cap(s);
-      if(tone>=2||idx===0){line=pick(emoPool)+" "+line;}
-      if(chaos)line=shout(line);
-      lines.push(line);
-      if(idx===0){
-        if(chance(.7)){lines.push(pick(INSIGHTS)); log("faux-insight",1);}
-        if(chance(.7)){lines.push(pick(OVEREXPLAIN)); log("over-explanation",1);}
-      }
-    });
-
-    if(tone>=2&&chance(.6)){lines.push("I'm deeply passionate about "+topic+"."); log("passion-cliche",1);}
-    if(tone>=2&&chance(.5)){lines.push(pick(ONEWORD)); log("one-word-drama",1);}
-    if(tone>=2&&chance(.6)){lines.push(pick(STATS)); log("fake-stat",1);}
-    if(firstSwap&&chance(.7)){lines.push('(And yes \u2014 "'+String(firstSwap[1]).toLowerCase()+'" just means "'+String(firstSwap[0]).toLowerCase()+'." But it sounds better.)'); log("define-own-jargon",1);}
-    if(chaos||(tone>=3&&chance(.4))){
-      lines.push("What did this teach me? A few things:");
-      shuffleTake(LESSONS,chaos?4:3).forEach(function(l,ix){lines.push((ix+1)+". "+l);});
-      if(chaos){lines.push("This. \ud83d\udc4f Is. \ud83d\udc4f The. \ud83d\udc4f Way."); log("clap-emphasis",1);}
-      log("listicle",1);
-    }
-    lines.push(pick(KICKERS)); log("profound-kicker",1);
-    if(tone>=2&&chance(.6)){lines.push(pick(GRATITUDE[tone>=3?3:2])); log("performative-gratitude",1);}
-    lines.push(pick(CTAS)); log("engagement-bait",1);
-    if(chaos){lines.push("Save this. Follow for more. Repost if it hit. \ud83d\udd01"); log("engagement-bait",1);}
-
-    var tagCount=Math.min(HASHES.length,tone+2+(chaos?2:0)+(chance(.5)?1:0));
-    var tags=shuffleTake(HASHES,tagCount).join(" "); log("hashtag-stuffing",tagCount);
-
-    var out=lines.join("\n\n")+"\n\n"+tags;
-    var emc=(out.match(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu)||[]).length; if(emc)log("emoji",emc);
-    return {text:out,tells:tells};
+  } catch (e) {
+    if (e && e.name === "AbortError") return;
   }
+  await copyText(text, $("shareBtn"), "copied");
+  if (blob) downloadCard();
+}
+$("shareBtn").addEventListener("click", shareSlop);
+if (navigator.share) $("shareBtn").textContent = "share";
+else $("shareBtn").textContent = "share";
 
-  // ---------- de-slop (rules cleaner) ----------
-  function deslop(text){
-    var removed={};
-    function log(k,n){removed[k]=(removed[k]||0)+(n||1);}
-    var raw=text.split(/\n+/).map(function(l){return l.trim();}).filter(Boolean);
-    var kept=[];
-    raw.forEach(function(l){
-      if(/^#\w/.test(l)){log("hashtags",1);return;}
-      if(/^[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u.test(l.replace(/^[\d.]+\s*/,""))&&l.length<40){/* keep short emoji lines? drop pure */}
-      var plain=l.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu,"").replace(/\ud83d\udc4f/g,"").trim();
-      if(!plain){log("emoji-line",1);return;}
-      var hit=STRIP_STARTS.some(function(p){var pp=stripEmoji(p).toLowerCase();return pp&&plain.toLowerCase().indexOf(pp)===0;});
-      if(hit){log("filler-line",1);return;}
-      if(/^\d+\.\s/.test(plain)&&plain.length<60){log("listicle-line",1);return;}
-      if(/^[A-Z][a-z]+\.$/.test(plain)){log("one-word-line",1);return;}
-      kept.push(plain);
-    });
-    var joined=kept.join(" ");
-    var em=(joined.match(/\u2014/g)||[]).length; if(em)log("em-dash",em);
-    joined=joined.replace(/\s*\u2014\s*/g,". ");
-    var bw=0;
-    Object.keys(REVERSE).sort(function(a,b){return b.length-a.length;}).forEach(function(k){
-      var re=new RegExp("\\b"+k.replace(/[-\/\\^$*+?.()|[\]{}]/g,"\\$&")+"\\b","gi");
-      joined=joined.replace(re,function(m){bw++;return matchCase(m,REVERSE[k]);});
-    });
-    if(bw)log("buzzword",bw);
-    var em2=(joined.match(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu)||[]).length;
-    joined=joined.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu,"").replace(/\s{2,}/g," ").trim();
-    if(em2)log("emoji",em2);
-    return {text:joined||"(nothing left. it was all slop.)",tells:removed};
-  }
+function count() {
+  const n = $("input").value.length;
+  const el = $("inCount");
+  el.textContent = n + " / " + MAX_INPUT;
+  el.classList.toggle("over", n >= MAX_INPUT);
+}
+$("input").addEventListener("input", count);
+count();
 
-  // ---------- scoring ----------
-  var SLOP_WORDS=/\b(utilize|leverag\w*|empower\w*|craft\w*|architect\w*|game-changing|transformative|robust|optimize\w*|synerg\w*|spearhead\w*|frictionless|next-generation|north star|thought leadership|pain point|end users?|stakeholders|upskill|velocity|showcase|thrilled|humbled|honored|grateful|passionate|movement|milestone|journey)\b/gi;
-  function scoreText(t){
-    if(!t.trim())return 0;
-    var emc=(t.match(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu)||[]).length;
-    var em=(t.match(/\u2014/g)||[]).length;
-    var bw=(t.match(SLOP_WORDS)||[]).length;
-    var tags=(t.match(/#\w+/g)||[]).length;
-    var lines=t.split(/\n\s*\n/).length;
-    var negp=/isn't just|not just|it's a movement/i.test(t)?12:0;
-    var s=Math.round(emc*3+em*5+bw*4+tags*2+Math.min(lines,8)*2+negp);
-    return Math.max(0,Math.min(99,s));
+$("input").addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+    e.preventDefault();
+    generate(state.tone, false);
   }
+});
 
-  // ---------- render ----------
-  var state={dir:"slop",tone:2};var lastOutput="",lastScore=0;
-  var LABELS={buzzword:"buzzword swap","em-dash":"em-dash","it's-not-X-it's-Y":"\u201cit's not X, it's Y\u201d","throat-clearing":"throat-clearing","humblebrag-announcement":"humblebrag opener","rhetorical-opener":"rhetorical opener","one-word-drama":"one-word drama","one-word-line":"one-word line","faux-insight":"faux-insight","over-explanation":"over-explaining","define-own-jargon":"defines own jargon","passion-cliche":"\u201cI'm passionate about\u201d","fake-stat":"fake stat","performative-gratitude":"performative gratitude","profound-kicker":"profound kicker","engagement-bait":"engagement bait",emoji:"emoji","hashtag-stuffing":"hashtags","fake-origin-story":"fake origin story",listicle:"listicle","clap-emphasis":"\ud83d\udc4f clap \ud83d\udc4f",hashtags:"hashtags","emoji-line":"emoji line","filler-line":"filler line","listicle-line":"listicle line"};
-
-  var animScore=0,animReq=null;
-  function setScore(target,low){
-    var s=$("score"),f=$("fill"),sc=document.querySelector(".score");
-    sc.classList.toggle("low",!!low); f.classList.toggle("low",!!low);
-    f.style.width=target+"%";
-    if(matchMedia("(prefers-reduced-motion: reduce)").matches){animScore=target;s.textContent=target;return;}
-    cancelAnimationFrame(animReq);var start=animScore,t0=null;
-    animReq=requestAnimationFrame(function loop(ts){if(!t0)t0=ts;var p=Math.min(1,(ts-t0)/600);animScore=Math.round(start+(target-start)*p);s.textContent=animScore;if(p<1)animReq=requestAnimationFrame(loop);});
-    setTimeout(function(){animScore=target;s.textContent=String(target);},700); // safety: land the final number even if rAF was throttled (background tab)
-  }
-  function slopVerdict(s){if(s>=90)return "Peak slop. Chef's kiss. Do not publish.";if(s>=70)return "Certified thought leader. Reads like a robot in a blazer.";if(s>=45)return "Getting there. A recruiter would squint.";return "Suspiciously readable. Add more emoji.";}
-  function cleanVerdict(s){if(s<=12)return "Human again. Someone actually wrote this.";if(s<=30)return "Mostly de-slopped. A few tells survived.";return "Still pretty sloppy. Try running it again.";}
-
-  function liCard(text,score){
-    var hot=score>=85;
-    var stamp=hot?'<div class="li-stamp">Certified Slop</div>':'';
-    var reacts=hot?'You and 2,847 others':'You and a few others';
-    var reposts=hot?'412 reposts':'3 reposts';
-    return '<div class="li-card">'+stamp+
-      '<div class="li-head"><div class="li-av">\ud83e\uddd1\u200d\ud83d\udcbc</div><div><div class="li-name">You <span class="li-badge">Top Voice \ud83c\udfc6</span></div><div class="li-sub">Thought Leader \u00b7 1st \u00b7 \ud83c\udf10</div></div></div>'+
-      '<div class="li-body">'+esc(text)+'</div>'+
-      '<div class="li-react">\ud83d\udc4f \ud83d\udd25 \ud83d\udcaf <b>'+reacts+'</b> \u00b7 '+reposts+'</div></div>';
-  }
-  function run(forceTone,chaos){
-    var text=$("input").value;
-    if(!text.trim()){$("input").focus();return;}
-    var o=$("output"),op=$("outPanel");
-    if(state.dir==="clean"){
-      var r=deslop(text);lastOutput=r.text;
-      o.classList.remove("empty");o.innerHTML="";o.textContent=r.text;op.classList.remove("slopped");
-      $("outLabel").textContent="De-slopped";
-      var sc=scoreText(r.text);setScore(sc,true);
-      $("verdict").textContent=cleanVerdict(sc);
-      $("scoreLabel").textContent="Slop Score (after)";$("tellsLabel").textContent="Tells removed";
-      renderChips(r.tells,true);
-    } else {
-      var tone=forceTone||state.tone;
-      var r2=slopify(text,tone,chaos);lastOutput=r2.text;
-      var s2=Math.min(99,scoreText(r2.text)+(tone-1)*5+(chaos?8:0));lastScore=s2;
-      o.classList.remove("empty");op.classList.add("slopped");
-      o.innerHTML=liCard(r2.text,s2);
-      $("outLabel").textContent="Certified slop";
-      setScore(s2,false);
-      var scEl=document.querySelector(".score");scEl.classList.remove("wow");
-      if(s2>=90&&!matchMedia("(prefers-reduced-motion: reduce)").matches){void scEl.offsetWidth;scEl.classList.add("wow");}
-      $("verdict").textContent=slopVerdict(s2);
-      $("scoreLabel").textContent="Slop Score";$("tellsLabel").textContent="Tells injected";
-      renderChips(r2.tells,false);
-      popMascot();
-    }
-  }
-  function renderChips(map,removed){
-    var chips=$("chips"),keys=Object.keys(map);
-    if(!keys.length){chips.innerHTML='<span class="none">Nothing to report.</span>';return;}
-    chips.innerHTML=keys.map(function(k){return '<span class="chip'+(removed?' rm':'')+'">'+(removed?'\u2212':'+')+' '+(LABELS[k]||k)+' <b>'+map[k]+'</b></span>';}).join("");
-  }
-
-  // segmented controls
-  function bindSeg(id,attr,cb){
-    var seg=$(id);
-    seg.addEventListener("click",function(e){
-      var b=e.target.closest("button"); if(!b)return;
-      [].forEach.call(seg.querySelectorAll("button"),function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});
-      cb(b.getAttribute(attr));
-    });
-  }
-  bindSeg("toneSeg","data-tone",function(v){state.tone=parseInt(v,10);setMascot(v);});
-  function setMascot(v){var m=$("mascot");if(!m)return;m.setAttribute("data-tone",v);var caps={"1":"Buttoned up","2":"Cozy & caffeinated","3":"Fully unhinged"};$("mascotCap").textContent=caps[v]||"";popMascot();}
-  function popMascot(){var m=$("mascot");if(!m)return;m.classList.remove("pop");void m.offsetWidth;m.classList.add("pop");setTimeout(function(){m.classList.remove("pop");},520);}
-  function slopToast(msg){var t=document.createElement("div");t.className="slop-toast";t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.style.opacity="0";setTimeout(function(){t.remove();},400);},2400);}
-  function spawnFloaters(){
-    if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-    var em=["\ud83d\ude80","\ud83d\udcbc","\ud83d\udcc8","\u2728","\ud83d\udd25","\ud83d\udcaf","\ud83d\ude4c","\ud83e\udde0","\ud83d\udca1","\u267b\ufe0f","\ud83c\udfc6","\ud83e\udd1d"];
-    var wrap=document.createElement("div");wrap.className="floaters";wrap.id="floaters";
-    for(var i=0;i<18;i++){var s=document.createElement("span");s.textContent=em[i%em.length];s.style.left=(Math.random()*100).toFixed(1)+"%";s.style.animationDuration=(4+Math.random()*5).toFixed(2)+"s";s.style.animationDelay=(Math.random()*4).toFixed(2)+"s";s.style.fontSize=(18+(Math.random()*26|0))+"px";wrap.appendChild(s);}
-    document.body.appendChild(wrap);
-  }
-  $("mascot").addEventListener("click",function(){setMode(mode==="slop"?(root.getAttribute("data-theme")==="dark"?"dark":"light"):"slop");});
-
-  // AI-first: try the tiered model endpoint, fall back to the instant rules engine on
-  // budget-exhaustion, misconfig, or no endpoint at all (bare file / preview).
-  function toneName(t){return t===1?"professional":t===3?"unhinged":"casual";}
-  function setBusy(b){
-    ["run","runHard","surprise","reset","saveBtn","copyBtn"].forEach(function(id){var el=$(id);if(el)el.disabled=b;});
-    var o=$("output");
-    if(b){o.classList.remove("empty");o.setAttribute("aria-busy","true");o.innerHTML='<div class="li-card" style="text-align:center;color:var(--muted)">\u270d\ufe0f slopping\u2026</div>';}
-    else{o.removeAttribute("aria-busy");}
-  }
-  function showAICard(text){
-    var score=Math.max(92,scoreText(text));lastOutput=text;lastScore=score;
-    var o=$("output"),op=$("outPanel");o.classList.remove("empty");op.classList.add("slopped");o.innerHTML=liCard(text,score);
-    setScore(score,false);$("verdict").textContent=slopVerdict(score);
-    $("scoreLabel").textContent="Slop Score";$("tellsLabel").textContent="Tells injected";
-    $("chips").innerHTML='<span class="chip">\u2728 generated by AI</span>';popMascot();
-  }
-  function generate(tone,chaos){
-    var text=$("input").value;if(!text.trim()){$("input").focus();return;}
-    setBusy(true);
-    fetch("/api/slopify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text:text,tone:toneName(chaos?3:tone),token:""})})
-      .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
-      .then(function(res){
-        if(res.ok&&res.d.text&&!res.d.fallback){showAICard(res.d.text);slopToast(res.d.model&&res.d.model.indexOf("sonnet")>-1?"\u2728 premium slop, hot off the model":"\u2728 freshly generated by AI");return;}
-        run(chaos?3:tone,chaos);
-      })
-      .catch(function(){run(chaos?3:tone,chaos);})
-      .finally(function(){setBusy(false);});
-  }
-  $("run").addEventListener("click",function(){generate(state.tone,false);});
-  $("runHard").addEventListener("click",function(){generate(3,true);});
-  $("reset").addEventListener("click",function(){
-    $("input").value="";lastOutput="";var o=$("output");o.classList.add("empty");o.innerHTML="";o.textContent="Your slop will appear here.";
-    setScore(0,false);$("verdict").textContent="Awaiting input.";$("chips").innerHTML='<span class="none">Nothing yet. Your writing is dangerously human.</span>';count();
+// ---------- examples ----------
+const EX = [
+  // classic: announcement + neg-parallel + jargon footnote
+  { in: "We shipped instant payouts. No fees.", out: "Thrilled to share this. 🙌\n\nThis isn't just payouts. It's a movement.\n\n🚀 We architected instant capital transfer — with zero friction.\n\n(And yes — \"architected\" just means \"built.\" But it sounds better.)\n\nGrateful for the journey. 🙏\n\n#Leadership #Growth #FinTech" },
+  // hot take + one-word drama + fake stat (no "isn't just")
+  { in: "My plant is still alive.", out: "Unpopular opinion:\n\n🌱 Consistency beats charisma.\n\nI kept a plant alive for another week — through relentless daily stewardship.\n\nGrowth.\n\nStudies show 87% of top performers water what they start.\n\nStay hungry. Stay humble. Stay watering.\n\n#Mindset #Resilience" },
+  // unhinged listicle + clap emphasis
+  { in: "I microwaved my lunch.", out: "I wasn't going to post this, but here goes.\n\nThree years ago I almost quit cooking forever.\n\n🔥 Then I engineered a culinary solution in under 90 seconds.\n\nWhat did this teach me? A few things:\n\n1. Vision beats comfort.\n\n2. Execution beats ideas.\n\n3. Consistency is the real hack.\n\nThis. 👏 Is. 👏 The. 👏 Way.\n\nSave this. Follow for more.\n\n#Innovation #Hustle #Growth" },
+  // rhetorical opener + over-explain + engagement bait
+  { in: "I attended a webinar and left early.", out: "Can we talk about webinars for a second?\n\nEver feel like leaving early is criminally underrated?\n\n🚀 I strategically curated my attendance at a high-impact virtual convening — then exited.\n\nWhat does that actually mean? Everything. It means everything.\n\n(We call that ruthless prioritization.)\n\nAgree? ♻️ Repost to share the wisdom.\n\n#Leadership #Learning" },
+  // short professional: restrained, almost no emoji
+  { in: "I fixed a typo in the docs.", out: "I'm pleased to share a brief reflection.\n\nWe didn't just fix a typo. We redefined clarity.\n\nI optimized an alignment discrepancy in the documentation — with zero drama.\n\nMost people miss this.\n\n#Excellence #Leadership" },
+  // passion cliché + profound empty kicker
+  { in: "I liked my own LinkedIn post.", out: "Hot take:\n\nFounder-led engagement is underrated.\n\n👏 I empowered a high-signal content asset with authentic social proof.\n\nI'm deeply passionate about inbox velocity.\n\nBecause at the end of the day, people don't buy products. They buy belief.\n\nDrop a 💯 if this resonates.\n\n#ThoughtLeadership #Hustle" },
+  // fake origin story + gratitude max
+  { in: "I put on real pants for a Zoom call.", out: "Beyond thrilled to FINALLY share this. 🚀\n\nEveryone said camera-off was enough.\n\n✨ I architected a camera-ready professional presence — from the waist up and, controversially, below.\n\nLet that sink in.\n\nGrateful. Humbled. Still processing. 🙏\n\nWho needs to hear this today? 👇\n\n#RemoteWork #Mindset #Growth" },
+  // throat-clearing + redefine + CTA stack
+  { in: "I replied 'circle back' in a meeting.", out: "Controversial, but here goes:\n\nWe didn't just say \"circle back.\" We unlocked async alignment.\n\n💡 I leveraged strategic deferral so the room could breathe.\n\nRead that again.\n\n9 out of 10 leaders won't admit this.\n\nYour network is your net worth.\n\nFollow for more takes like this. 🚀\n\n#Productivity #Synergy #Leadership" }
+];
+const exWrap = $("examples");
+EX.forEach((ex) => {
+  const d = document.createElement("div");
+  d.className = "ex";
+  const inn = document.createElement("div");
+  inn.className = "ex-in";
+  const ink = document.createElement("span"); ink.className = "k"; ink.textContent = "Human wrote";
+  inn.appendChild(ink); inn.appendChild(document.createTextNode(ex.in));
+  const out = document.createElement("div");
+  out.className = "ex-out";
+  const outk = document.createElement("span"); outk.className = "k"; outk.textContent = "Sloppify returned";
+  out.appendChild(outk); out.appendChild(document.createTextNode(ex.out));
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "ex-try";
+  btn.textContent = "Load this above ↑";
+  btn.addEventListener("click", () => {
+    $("input").value = ex.in;
+    count();
+    window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    generate(state.tone, false);
   });
-  $("copyBtn").addEventListener("click",function(){
-    if(!lastOutput)return;
-    navigator.clipboard&&navigator.clipboard.writeText(lastOutput);this.textContent="copied";var s=this;setTimeout(function(){s.textContent="copy";},1200);
-  });
-  var SEEDS=["I volunteered at a booth at a festival.","I made coffee for the team this morning.","I fixed a typo in the docs.","I watched four hours of Netflix.","I finally cleaned out my inbox.","We shipped a small bug fix.","I took a walk and it was nice.","My cat knocked a cup off the table.","I attended a webinar and left early.","I reorganized my desk drawer.","I ate lunch alone today.","I got a participation trophy in third grade.","I remembered to water my plant this week."];
-  $("surprise").addEventListener("click",function(){
-    $("input").value=SEEDS[Math.floor(Math.random()*SEEDS.length)];count();
-    var t=String(1+Math.floor(Math.random()*3));
-    [].forEach.call($("toneSeg").querySelectorAll("button"),function(x){x.setAttribute("aria-pressed",x.getAttribute("data-tone")===t?"true":"false");});
-    state.tone=parseInt(t,10);setMascot(t);
-    generate(state.tone,false);
-  });
-  $("saveBtn").addEventListener("click",downloadCard);
-  function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
-  function wrapLines(ctx,text,maxW){var out=[];text.split("\n").forEach(function(para){if(para.trim()===""){out.push("");return;}var words=para.split(" "),line="";words.forEach(function(w){var test=line?line+" "+w:w;if(ctx.measureText(test).width>maxW&&line){out.push(line);line=w;}else line=test;});if(line)out.push(line);});return out;}
-  function renderCard(text,score){
-    var W=1040,P=52,maxW=W-P*2,lineH=42,headerH=152,scale=2;
-    var tmp=document.createElement("canvas").getContext("2d");tmp.font="400 30px Helvetica, Arial, sans-serif";
-    var lines=wrapLines(tmp,text,maxW);
-    var H=headerH+lines.length*lineH+130;
-    var c=document.createElement("canvas");c.width=W*scale;c.height=H*scale;
-    var ctx=c.getContext("2d");ctx.scale(scale,scale);
-    ctx.fillStyle="#ffffff";ctx.fillRect(0,0,W,H);
-    ctx.strokeStyle="#e5e0d5";ctx.strokeRect(1,1,W-2,H-2);
-    var ax=P+34,ay=P+30;
-    var g=ctx.createLinearGradient(ax-34,ay-34,ax+34,ay+34);g.addColorStop(0,"#cf3418");g.addColorStop(1,"#e0a92a");
-    ctx.fillStyle=g;ctx.beginPath();ctx.arc(ax,ay,34,0,7);ctx.fill();
-    ctx.textAlign="center";ctx.textBaseline="middle";ctx.font="34px sans-serif";ctx.fillText("\ud83e\uddd1",ax,ay+1);
-    ctx.textAlign="left";ctx.textBaseline="alphabetic";
-    var nx=P+82,ny=P+26;
-    ctx.fillStyle="#17161c";ctx.font="700 30px Helvetica, Arial, sans-serif";ctx.fillText("You",nx,ny);
-    var bx=nx+ctx.measureText("You").width+16;
-    ctx.font="700 20px 'Comic Sans MS', sans-serif";var btxt="Top Voice \ud83c\udfc6",bw=ctx.measureText(btxt).width+22;
-    ctx.fillStyle="#e0a92a";roundRect(ctx,bx,ny-23,bw,30,15);ctx.fill();
-    ctx.fillStyle="#241a00";ctx.fillText(btxt,bx+11,ny-2);
-    ctx.fillStyle="#8a8780";ctx.font="400 22px Helvetica, Arial, sans-serif";ctx.fillText("Thought Leader \u00b7 1st \u00b7 \ud83c\udf10",nx,ny+30);
-    ctx.fillStyle="#17161c";ctx.font="400 30px Helvetica, Arial, sans-serif";
-    var y=headerH;lines.forEach(function(l){ctx.fillText(l,P,y);y+=lineH;});
-    y+=8;ctx.strokeStyle="#e5e0d5";ctx.beginPath();ctx.moveTo(P,y);ctx.lineTo(W-P,y);ctx.stroke();y+=34;
-    var hot=score>=85;
-    ctx.fillStyle="#67645c";ctx.font="400 24px Helvetica, Arial, sans-serif";
-    ctx.fillText("\ud83d\udc4f \ud83d\udd25 \ud83d\udcaf   "+(hot?"You and 2,847 others \u00b7 412 reposts":"You and a few others \u00b7 3 reposts"),P,y);
-    ctx.fillStyle="#b7b3aa";ctx.font="400 20px Helvetica, Arial, sans-serif";ctx.textAlign="right";
-    ctx.fillText("made with sloppify \u00b7 Slop Score "+score+"%",W-P,H-28);ctx.textAlign="left";
-    if(hot){ctx.save();ctx.translate(W-160,96);ctx.rotate(11*Math.PI/180);ctx.strokeStyle="#cf3418";ctx.lineWidth=4;roundRect(ctx,-78,-26,156,52,8);ctx.stroke();ctx.fillStyle="#cf3418";ctx.font="700 26px 'Comic Sans MS', sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("CERTIFIED SLOP",0,0);ctx.restore();ctx.textAlign="left";ctx.textBaseline="alphabetic";}
-    return c;
-  }
-  function downloadCard(){
-    if(!lastOutput){$("input").focus();return;}
-    renderCard(lastOutput,lastScore).toBlob(function(blob){if(!blob)return;var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download="my-linkedin-slop.png";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},2000);});
-  }
-  // footer "See how it's built" is a normal anchor to the GitHub repo \u2014 no JS needed.
-  function count(){$("inCount").textContent=$("input").value.length+" chars";}
-  $("input").addEventListener("input",count);count();
+  d.appendChild(inn); d.appendChild(out); d.appendChild(btn);
+  exWrap.appendChild(d);
+});
 
-  // ---------- examples ----------
-  var EX=[
-    {in:"We shipped instant payouts. No fees.",out:"Thrilled to share this. \ud83d\ude4c\n\nThis isn't just payouts. It's a movement.\n\n\ud83d\ude80 We architected instant capital transfer \u2014 with zero friction.\n\nLet me break that down.\n\n(And yes \u2014 \"architected\" just means \"built.\" But it sounds better.)\n\nGrateful for the journey. \ud83d\ude4f\n\n#Leadership #Growth #FinTech"},
-    {in:"I made a mistake and learned from it.",out:"Humbled and honored to share something. \ud83d\ude4f\n\nThree years ago, I almost quit.\n\n\ud83d\udd25 I crafted a mistake \u2014 and upskilled from it.\n\nWhat does that actually mean? Everything. It means everything.\n\nThe future belongs to the ones who show up.\n\n#Mindset #Growth #Resilience"},
-    {in:"Our new feature saves time.",out:"Excited to share a quick win. \ud83d\ude80\n\nThis isn't just a feature. It's a movement.\n\n\u2728 Our next-generation execution empowers end users.\n\nI'm deeply passionate about efficiency.\n\nStudies show 87% of top performers agree.\n\nComfort is the enemy of the next level.\n\n#Innovation #AI #GameChanger"},
-    {in:"I attended a webinar and left early.",out:"Humbled to share a learning moment. \ud83d\ude4f\n\nThis isn't just a webinar. It's a paradigm shift.\n\n\ud83d\ude80 I strategically curated my attendance at a high-impact virtual convening.\n\n(And yes \u2014 I left early. We call that ruthless prioritization.)\n\nGrateful for the journey. \ud83d\ude4c\n\n#Leadership #Growth #Learning"},
-    {in:"I updated the spreadsheet.",out:"Thrilled to announce a milestone. \u2728\n\nThis isn't just a spreadsheet. It's a single source of truth.\n\n\ud83d\udcca I architected a dynamic data ecosystem \u2014 with zero manual friction.\n\nMost people miss this.\n\n9 out of 10 leaders won't admit it.\n\n#DataDriven #Innovation #Excellence"},
-    {in:"My plant is still alive.",out:"Beyond humbled to share. \ud83c\udf31\n\nThis isn't just a plant. It's a testament to consistency.\n\n\ud83d\udca7 I nurtured a living organism through relentless daily stewardship.\n\nWhat did this teach me? Everything. It means everything.\n\nStay hungry. Stay humble. Stay watering.\n\n#Growth #Mindset #Resilience"},
-    {in:"I replied to one email today.",out:"Excited to share a quick win. \ud83d\udd25\n\nThis isn't just an email. It's a movement.\n\n\ud83d\udcec I empowered a stakeholder with a timely, high-signal communication.\n\nI'm deeply passionate about inbox velocity.\n\nGrateful for the journey. \ud83d\ude4f\n\n#Leadership #Productivity #Hustle"},
-    {in:"I microwaved my lunch.",out:"Humbled and honored to announce. \ud83c\udf5c\n\nThis isn't just lunch. It's a lifestyle.\n\n\ud83d\udd25 I engineered a culinary solution in under 90 seconds.\n\n(And yes \u2014 engineered just means microwaved. But it sounds better.)\n\nComfort is the enemy of the next level.\n\n#Innovation #Growth #Foodie"}
-  ];
-  var exWrap=$("examples");
-  EX.forEach(function(ex){
-    var d=document.createElement("div");d.className="ex";
-    d.innerHTML='<div class="ex-in"><span class="k">Human wrote</span>'+ex.in+'</div>'+
-      '<div class="ex-out"><span class="k">Sloppify returned</span>'+ex.out+'</div>'+
-      '<button class="ex-try">Load this above &uarr;</button>';
-    d.querySelector(".ex-try").addEventListener("click",function(){
-      $("input").value=ex.in;count();window.scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
-      run();
-    });
-    exWrap.appendChild(d);
-  });
+// ---------- deeplink / fresh seed ----------
+(function bootFromQuery() {
+  const params = new URLSearchParams(location.search);
+  const text = params.get("text");
+  const toneP = toneFromParam(params.get("tone"));
+  if (toneP) setTone(toneP);
+  if (text && text.trim()) {
+    $("input").value = text.slice(0, MAX_INPUT);
+    count();
+    generate(state.tone, false);
+    return;
+  }
+  // Fresh visit: rotate the starter line so the page doesn't always look identical.
+  $("input").value = SEEDS[Math.floor(Math.random() * SEEDS.length)];
+  count();
 })();
 </script>
 </body>

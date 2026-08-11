@@ -6,7 +6,9 @@
   "description": "Turn anything into unbearable LinkedIn slop. A parody tool.",
   "scripts": {
     "dev": "wrangler pages dev . --port 8788",
-    "eval": "node golden-eval.mjs"
+    "eval": "node golden-eval.mjs",
+    "eval:ai": "node golden-eval.mjs",
+    "eval:rules": "node golden-eval-rules.mjs"
   },
   "devDependencies": {
     "wrangler": "^3.90.0"

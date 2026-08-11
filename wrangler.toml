@@ -2,10 +2,10 @@ name = "sloppify"
 compatibility_date = "2024-11-01"
 pages_build_output_dir = "."
 
-# Production bindings are configured in the Cloudflare Pages dashboard
-# (Settings -> Functions -> KV namespace bindings, and Settings -> Environment variables).
-#
-# For local `wrangler pages dev`, create a KV namespace and uncomment:
-# [[kv_namespaces]]
-# binding = "RL"
-# id = "your-kv-namespace-id"
+# Local `wrangler pages dev` picks this up automatically.
+# For production: Cloudflare Pages → Settings → Functions → KV bindings → bind as RL
+# (same namespace id), plus set ANTHROPIC_API_KEY as a secret.
+
+[[kv_namespaces]]
+binding = "RL"
+id = "f340d2031a0e4fafac426da857c78197"
