@@ -1,5 +1,7 @@
 # Sloppify 💩
 
+[![eval](https://github.com/mananritwik/sloppify/actions/workflows/eval.yml/badge.svg)](https://github.com/mananritwik/sloppify/actions/workflows/eval.yml)
+
 Turn anything into an unbearable LinkedIn thought-leadership post. A parody.
 
 Paste a plain sentence and Sloppify promotes it into humblebrag broetry — buzzword swaps, "it's not X, it's a movement," em-dashes, a made-up statistic, performative gratitude, and hashtags. There's a tone dial (Professional / Casual / Unhinged), a pixel office-worker mascot who re-dresses by tone, a live Slop Score, a downloadable share card, and a hidden **SLOP MODE** (third click of the theme icon).
