@@ -69,7 +69,7 @@
   .seg button[aria-pressed="true"]{background:var(--accent);color:#fff;}
   .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 
-  .work{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:16px 0 8px;align-items:stretch;}
+  .work{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:16px 0 8px;align-items:start;}
   @media(max-width:860px){.work{grid-template-columns:1fr;}}
   .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
   .panel.slopped{background:var(--slop-bg);border-color:var(--slop-line);}
@@ -81,7 +81,7 @@
   .mini:hover{color:var(--accent);}
   textarea{width:100%;flex:1;border:0;background:transparent;color:var(--ink);resize:vertical;font-family:var(--sans);font-size:15.5px;line-height:1.6;padding:16px;min-height:230px;outline:none;}
   textarea::placeholder{color:var(--faint);}
-  .out{flex:1;min-height:230px;padding:16px;font-size:15.5px;line-height:1.72;white-space:pre-wrap;word-wrap:break-word;}
+  .out{flex:1;min-height:230px;max-height:min(52vh,480px);overflow-y:auto;padding:16px;font-size:15.5px;line-height:1.72;white-space:pre-wrap;word-wrap:break-word;}
   .out.empty{color:var(--faint);display:flex;align-items:center;justify-content:center;text-align:center;font-style:italic;}
 
   .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:16px 0 4px;}
@@ -166,6 +166,10 @@
   body.slopmode .logo{color:#18171d;}
   body.slopmode .tag{color:#57544c;}
   body.slopmode .toggle{color:#18171d;background:#fffdf8;border-color:#e5e0d5;}
+  body.slopmode .glabel,body.slopmode .hint,body.slopmode .foot,body.slopmode .foot .made,body.slopmode .flex-note{color:#fff;text-shadow:1px 1px 0 #000,2px 2px 0 rgba(0,0,0,.45);}
+  body.slopmode .foot a.cta{color:#fff;border-bottom-color:#ffd84d;}
+  body.slopmode .flex-note{border-color:rgba(255,255,255,.55);}
+  body.slopmode .flex-note .k{color:#ffd84d;}
   body.slopmode .hero h1,body.slopmode .hero p,body.slopmode .section-h,body.slopmode .section-sub{color:#fff;text-shadow:1px 1px 0 #000,3px 3px 0 rgba(0,0,0,.35);}
   body.slopmode .hero h1 .red{color:#ffd84d;}
   body.slopmode .panel,body.slopmode .gauge,body.slopmode .tells,body.slopmode .mascot,body.slopmode .ex,body.slopmode .seg,body.slopmode .flex-note{box-shadow:5px 5px 0 rgba(0,0,0,.18);transform:rotate(-.6deg);}
@@ -175,9 +179,9 @@
 
   .section-h{font-weight:800;font-size:23px;letter-spacing:-0.02em;margin:44px 0 4px;}
   .section-sub{color:var(--muted);font-size:14.5px;margin:0 0 18px;}
-  .examples{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .examples{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 14px;scrollbar-width:thin;}
   @media(max-width:860px){.examples{grid-template-columns:1fr;}}
-  .ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
+  .ex{flex:0 0 300px;scroll-snap-align:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
   .ex .ex-in{padding:14px 15px;font-size:14px;color:var(--muted);border-bottom:1px dashed var(--line);}
   .ex .ex-in .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:5px;}
   .ex .ex-out{padding:14px 15px;font-size:13.6px;line-height:1.62;white-space:pre-wrap;background:var(--slop-bg);color:var(--ink);flex:1;}
@@ -284,7 +288,7 @@
   </section>
 
   <h2 class="section-h">Certified before &amp; after</h2>
-  <p class="section-sub">Real sentences, professionally ruined. Tap one to load it above.</p>
+  <p class="section-sub">Real sentences, professionally ruined. Tap one to load it above. (Scroll for more &#x2192;)</p>
   <div class="examples" id="examples"></div>
 
   <div class="flex-note">
@@ -675,7 +679,12 @@
   var EX=[
     {in:"We shipped instant payouts. No fees.",out:"Thrilled to share this. \ud83d\ude4c\n\nThis isn't just payouts. It's a movement.\n\n\ud83d\ude80 We architected instant capital transfer \u2014 with zero friction.\n\nLet me break that down.\n\n(And yes \u2014 \"architected\" just means \"built.\" But it sounds better.)\n\nGrateful for the journey. \ud83d\ude4f\n\n#Leadership #Growth #FinTech"},
     {in:"I made a mistake and learned from it.",out:"Humbled and honored to share something. \ud83d\ude4f\n\nThree years ago, I almost quit.\n\n\ud83d\udd25 I crafted a mistake \u2014 and upskilled from it.\n\nWhat does that actually mean? Everything. It means everything.\n\nThe future belongs to the ones who show up.\n\n#Mindset #Growth #Resilience"},
-    {in:"Our new feature saves time.",out:"Excited to share a quick win. \ud83d\ude80\n\nThis isn't just a feature. It's a movement.\n\n\u2728 Our next-generation execution empowers end users.\n\nI'm deeply passionate about efficiency.\n\nStudies show 87% of top performers agree.\n\nComfort is the enemy of the next level.\n\n#Innovation #AI #GameChanger"}
+    {in:"Our new feature saves time.",out:"Excited to share a quick win. \ud83d\ude80\n\nThis isn't just a feature. It's a movement.\n\n\u2728 Our next-generation execution empowers end users.\n\nI'm deeply passionate about efficiency.\n\nStudies show 87% of top performers agree.\n\nComfort is the enemy of the next level.\n\n#Innovation #AI #GameChanger"},
+    {in:"I attended a webinar and left early.",out:"Humbled to share a learning moment. \ud83d\ude4f\n\nThis isn't just a webinar. It's a paradigm shift.\n\n\ud83d\ude80 I strategically curated my attendance at a high-impact virtual convening.\n\n(And yes \u2014 I left early. We call that ruthless prioritization.)\n\nGrateful for the journey. \ud83d\ude4c\n\n#Leadership #Growth #Learning"},
+    {in:"I updated the spreadsheet.",out:"Thrilled to announce a milestone. \u2728\n\nThis isn't just a spreadsheet. It's a single source of truth.\n\n\ud83d\udcca I architected a dynamic data ecosystem \u2014 with zero manual friction.\n\nMost people miss this.\n\n9 out of 10 leaders won't admit it.\n\n#DataDriven #Innovation #Excellence"},
+    {in:"My plant is still alive.",out:"Beyond humbled to share. \ud83c\udf31\n\nThis isn't just a plant. It's a testament to consistency.\n\n\ud83d\udca7 I nurtured a living organism through relentless daily stewardship.\n\nWhat did this teach me? Everything. It means everything.\n\nStay hungry. Stay humble. Stay watering.\n\n#Growth #Mindset #Resilience"},
+    {in:"I replied to one email today.",out:"Excited to share a quick win. \ud83d\udd25\n\nThis isn't just an email. It's a movement.\n\n\ud83d\udcec I empowered a stakeholder with a timely, high-signal communication.\n\nI'm deeply passionate about inbox velocity.\n\nGrateful for the journey. \ud83d\ude4f\n\n#Leadership #Productivity #Hustle"},
+    {in:"I microwaved my lunch.",out:"Humbled and honored to announce. \ud83c\udf5c\n\nThis isn't just lunch. It's a lifestyle.\n\n\ud83d\udd25 I engineered a culinary solution in under 90 seconds.\n\n(And yes \u2014 engineered just means microwaved. But it sounds better.)\n\nComfort is the enemy of the next level.\n\n#Innovation #Growth #Foodie"}
   ];
   var exWrap=$("examples");
   EX.forEach(function(ex){
