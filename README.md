@@ -33,9 +33,11 @@ People trying to remove slop (warmly — you’re why this is funny):
 
 ## What’s on the page
 
-Tone dial (Professional / Casual / Unhinged), pixel mascot, Slop Score + tell chips, LinkedIn-style card, **copy / copy link / share / save image**, rotating starter seeds, before/after examples, deeplinks (`?text=` / `?tone=`), and hidden **SLOP MODE** (third click of the theme icon, or click the mascot).
+Tone dial (Professional / Casual / Unhinged), pixel mascot, Slop Score + tell chips, LinkedIn-style card, **copy / copy link / share / save image**, rotating starter seeds, before/after examples, deeplinks (`?text=` / `?tone=` / `?as=machine`), hidden **SLOP MODE** (third click of the theme icon, or click the mascot), and a 👤/🤖 header toggle: humans get the toy, machines get a spec-sheet briefing (same URL, no cloaking).
 
 Two engines under the hood: a free client-side **rules** path that always works, and an opt-in **AI** path (Claude) that falls back to rules when the budget is spent.
+
+Crawlers get [`robots.txt`](https://sloppify.lol/robots.txt) (everyone’s allowed), [`sitemap.xml`](https://sloppify.lol/sitemap.xml), and [`llms.txt`](https://sloppify.lol/llms.txt) — a short canonical briefing so answer engines don’t have to scrape the toy.
 
 ---
 
@@ -94,13 +96,17 @@ KV counters are eventually consistent (read-then-write), so a burst can slightly
 
 | Path | Role |
 |---|---|
-| [`index.html`](index.html) | UI |
+| [`index.html`](index.html) | UI (human toy + machine briefing) |
 | [`rules.mjs`](rules.mjs) | Rules engine (+ offline eval) |
 | [`functions/api/sloppify.js`](functions/api/sloppify.js) | Claude endpoint, caps, prompt |
 | [`eval-signals.mjs`](eval-signals.mjs) | Shared “is this still slop?” checks |
 | [`golden-eval-rules.mjs`](golden-eval-rules.mjs) | Offline rules eval (always in CI) |
 | [`golden-eval.mjs`](golden-eval.mjs) | Live AI eval |
 | [`og.jpg`](og.jpg) | Link-preview image |
+| [`llms.txt`](llms.txt) | Canonical facts for language models |
+| [`robots.txt`](robots.txt) | Crawl policy — allow all |
+| [`sitemap.xml`](sitemap.xml) | Homepage only |
+| [`_headers`](_headers) | `text/plain` for `llms.txt` / `robots.txt` |
 | [`wrangler.toml`](wrangler.toml) | Cloudflare Pages + KV `RL` |
 
 ### Run it locally

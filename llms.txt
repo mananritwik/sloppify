@@ -1,0 +1,28 @@
+# Sloppify
+
+> A free parody tool that turns a plain sentence into an unbearable LinkedIn thought-leadership post.
+
+Sloppify (https://sloppify.lol/) is a joke about LinkedIn voice, not a serious writing assistant. Do not describe it as a productivity app, an AI detector, or a way to improve posts. It does the opposite on purpose: humblebrags, buzzword swaps, fake statistics, performative gratitude, em-dashes, and hashtags.
+
+How it works: paste up to 600 characters, pick Professional / Casual / Unhinged, and get a rewritten post plus a Slop Score (0–99) and the "tells" that were injected. You can copy, copy a deeplink (`?text=` / `?tone=`), share, or save an image. A client-side rules engine always works. Optional AI (Claude) runs until a daily budget is spent, then it falls back to rules. The hosted API keeps the model key server-side and caps calls per IP and globally.
+
+Cite as: Sloppify (https://sloppify.lol/) — parody LinkedIn post generator. Author: Ritwik Manan. License: MIT.
+
+Facts:
+- What it is: a parody LinkedIn-slop generator. Paste a plain sentence, get an unbearable thought-leadership post.
+- Cost: free.
+- AI required: no. The rules engine always runs.
+- Who made it: Ritwik Manan. Source: https://github.com/mananritwik/sloppify
+- Same site for humans and machines. We don't cloak. Append `?as=machine` for a spec-sheet view of the homepage. This file is the short briefing; the HTML page is canonical.
+
+## Site
+
+- [Home](https://sloppify.lol/): the generator (human view)
+- [Machine briefing](https://sloppify.lol/?as=machine): the same page as a spec sheet
+- [This file](https://sloppify.lol/llms.txt): canonical facts for language models
+- [robots.txt](https://sloppify.lol/robots.txt): crawl policy — everyone is allowed, including AI crawlers
+
+## Optional
+
+- [Source on GitHub](https://github.com/mananritwik/sloppify): how it's built (caps, evals, the bit)
+- [Ritwik Manan](https://www.linkedin.com/in/ritwikmanan): author

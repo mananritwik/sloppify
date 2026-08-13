@@ -1,0 +1,10 @@
+# Same site for humans and machines. We don't cloak.
+# GPTBot, ClaudeBot, PerplexityBot, Google-Extended: yes, you too.
+# Briefing: https://sloppify.lol/llms.txt
+# Human toy: https://sloppify.lol/?as=human
+# Machine view: https://sloppify.lol/?as=machine
+
+User-agent: *
+Allow: /
+
+Sitemap: https://sloppify.lol/sitemap.xml
